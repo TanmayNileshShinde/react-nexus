@@ -36,17 +36,22 @@ const Home = () => {
           </div>
         </Link>
         
-        {/* Card 2: Placeholder */}
+        {/* Card 2: AngularJS Module */}
+        <a href="/angular-dashboard.html" style={{ textDecoration: 'none' }}>
         <div className="glass-panel" style={{ 
-          padding: '20px', 
-          opacity: 0.5,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
+            padding: '20px', 
+            border: '1px solid #bc13fe', /* Different color for Angular */
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
         }}>
-          <FileText size={32} color="#bc13fe" />
-          <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Form (Empty)</h4>
+            <FileText size={32} color="#bc13fe" />
+            <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Angular Data</h4>
+            <p style={{ fontSize: '0.7rem', color: '#ccc', margin: '5px 0 0 0' }}>Units II & III</p>
         </div>
+        </a>
         
         {/* Card 3: Placeholder */}
         <div className="glass-panel" style={{ 

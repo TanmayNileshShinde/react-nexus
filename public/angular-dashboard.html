@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AngularJS Module</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #0f172a; /* Matches your React Theme */
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 50px;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 500px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: none;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; border-bottom: 1px solid #bc13fe; padding: 10px; color: #bc13fe; }
+        td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        h2 { color: #00f3ff; margin-top: 0; }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #ccc;
+            border: 1px solid #ccc;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+
+    <div class="glass-panel">
+        <h2>AngularJS Student Data</h2>
+        <p style="opacity: 0.7;">Covers Unit II & III: Tables, Filters, MVC</p>
+
+        <input type="text" ng-model="searchTxt" placeholder="Filter by Name (Type here...)" style="background: rgba(255,255,255,0.1); color: white;">
+
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Subject</th>
+                <th>Marks</th>
+            </tr>
+            <tr ng-repeat="x in students | filter:searchTxt">
+                <td>{{ x.name }}</td>
+                <td>{{ x.subject }}</td>
+                <td>{{ x.marks }}</td>
+            </tr>
+        </table>
+
+        <br>
+        <a href="/" class="back-btn">← Back to React Nexus</a>
+    </div>
+
+    <script>
+        // Unit II: MVC Architecture (Model-View-Controller)
+        var app = angular.module('myApp', []);
+        app.controller('myCtrl', function($scope) {
+            // The Data Model (JSON)
+            $scope.students = [
+                {name:'Tanmay', subject:'CSS', marks:85},
+                {name:'Rohan', subject:'CSS', marks:78},
+                {name:'Priya', subject:'Java', marks:92},
+                {name:'Amit', subject:'Python', marks:88},
+                {name:'Neha', subject:'Angular', marks:95}
+            ];
+        });
+    </script>
+
+</body>
+</html>
