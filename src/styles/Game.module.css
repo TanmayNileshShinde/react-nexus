@@ -1,0 +1,20 @@
+.container { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+.status { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+.board { 
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; 
+  background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px; 
+}
+.square {
+  width: 80px; height: 80px; background: rgba(255,255,255,0.1);
+  border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+  font-size: 2.5rem; display: flex; justify-content: center; align-items: center;
+  cursor: pointer; color: white;
+}
+.square:hover { background: rgba(255,255,255,0.2); }
+.x { color: #00f3ff; text-shadow: 0 0 10px #00f3ff; }
+.o { color: #bc13fe; text-shadow: 0 0 10px #bc13fe; }
+.button {
+  padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold;
+  background: rgba(255,255,255,0.1); color: white; display: flex; gap: 8px; align-items: center;
+}
+.button:hover { background: rgba(255,255,255,0.2); }
