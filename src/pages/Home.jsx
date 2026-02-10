@@ -49,7 +49,6 @@ const Home = () => {
         }}>
             <FileText size={32} color="#bc13fe" />
             <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Angular Data</h4>
-            <p style={{ fontSize: '0.7rem', color: '#ccc', margin: '5px 0 0 0' }}>Units II & III</p>
         </div>
         </a>
         
