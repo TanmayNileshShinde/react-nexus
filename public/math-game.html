@@ -80,7 +80,21 @@
         .action-row { display: flex; gap: 15px; margin-top: auto; }
         .action-btn { flex: 1; padding: 15px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; }
 
-        .login-btn { background: white; color: #0f172a; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        /* Updated Login Button Style to match Page 1 & 3 */
+        .login-btn { 
+            background: white; 
+            color: #0f172a; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-weight: 700; 
+            font-size: 0.85rem;
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+
         .user-pill { background: rgba(255, 255, 255, 0.05); padding: 5px 15px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; gap: 12px; }
 
         .question-box { font-size: 3rem; font-weight: 900; text-align: center; margin: 40px 0; text-shadow: 0 0 20px rgba(0, 243, 255, 0.3); }
@@ -96,7 +110,7 @@
 
         <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
             <button class="login-btn" ng-if="!user" ng-click="login()">
-                <i data-lucide="user" width="16"></i> Login
+                <i data-lucide="user" width="16"></i> Login with Google
             </button>
 
             <div class="user-pill" ng-if="user">
@@ -160,13 +174,13 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyARc1D7X5VV8HrRz7uyniBQ1Fw3CVqDbVU",
-            authDomain: "react-nexus-9798.firebaseapp.com",
-            projectId: "react-nexus-9798",
-            storageBucket: "react-nexus-9798.firebasestorage.app",
-            messagingSenderId: "195342203585",
-            appId: "1:195342203585:web:9e3f0065b4c144603f3240",
-            measurementId: "G-2J7JY2XJRN"
+        apiKey: "AIzaSyARc1D7X5VV8HrRz7uyniBQ1Fw3CVqDbVU",
+        authDomain: "react-nexus-9798.firebaseapp.com",
+        projectId: "react-nexus-9798",
+        storageBucket: "react-nexus-9798.firebasestorage.app",
+        messagingSenderId: "195342203585",
+        appId: "1:195342203585:web:9e3f0065b4c144603f3240",
+        measurementId: "G-2J7JY2XJRN"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -243,7 +257,6 @@
                 if($scope.timer <= 0) return;
 
                 if(ans === $scope.question.ans) {
-                    // CORRECT: Points + Bonus Time + Next Question
                     $scope.score += 10;
                     $scope.timer += 2;
                     
@@ -252,8 +265,6 @@
                         await updateDoc(doc(db, "users", $scope.user.uid), { math_score: $scope.score });
                     }
                 } 
-                // WRONG: Just move to next question (Logic falls through to nextQuestion() call)
-                
                 $scope.nextQuestion();
             };
 
