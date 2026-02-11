@@ -1,6 +1,5 @@
 # React Nexus 🚀
 
-![React Nexus Banner](https://via.placeholder.com/1200x300.png?text=React+Nexus)
 
 **React Nexus** is a modern, scalable React application built with clean architecture and performance in mind. It serves as a structured foundation for building responsive, modular, and production-ready web applications.
 
