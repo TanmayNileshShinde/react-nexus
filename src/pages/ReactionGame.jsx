@@ -110,7 +110,7 @@ const ReactionGame = () => {
         border: '1px solid rgba(0, 243, 255, 0.3)'
     }}>
       
-      <h2 style={{ textAlign: 'center', background: 'linear-gradient(to right, #00f3ff, #bc13fe)', WebkitBackgroundClip: 'text', color: 'transparent', textTransform: 'uppercase', letterSpacing: '2px' }}>REACTION NEXUS</h2>
+      <h2 style={{ textAlign: 'center', background: 'linear-gradient(to right, #00af3a, #bc13fe)', WebkitBackgroundClip: 'text', color: 'transparent', textTransform: 'uppercase', letterSpacing: '2px' }}>REACTION NEXUS</h2>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
         {!user ? (
@@ -119,7 +119,7 @@ const ReactionGame = () => {
           <div style={{ background: 'rgba(255, 255, 255, 0.07)', padding: '5px 15px', borderRadius: '30px', border: '1px solid #bc13fe', display: 'flex', alignItems: 'center', gap: '10px' }}>
              <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{user.displayName}</div>
-                <div style={{ fontSize: '0.7rem', color: '#00f3ff' }}>BEST: {bestTime ? `${bestTime}ms` : '---'}</div>
+                <div style={{ fontSize: '0.7rem', color: '#00af3a' }}>BEST: {bestTime ? `${bestTime}ms` : '---'}</div>
              </div>
              <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 32, height: 32, borderRadius: '50%' }}/>
           </div>
