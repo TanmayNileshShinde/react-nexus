@@ -83,18 +83,25 @@ const Home = () => {
           </div>
         </Link>
 
-        {/* Card 4: Placeholder for Future Page */}
-        <div className="glass-panel" style={{ 
-          padding: '20px', 
-          opacity: 0.5,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
-        }}>
-          <Info size={32} color="#888" />
-          <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Coming Soon</h4>
-        </div>
-
+        {/* Card 4: Reaction Lights Game */}
+        <Link to="/reaction" style={{ textDecoration: 'none' }}>
+          <div className="glass-panel" style={{ 
+            padding: '20px', 
+            border: '1px solid #ff4444',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Zap size={32} color="#ff4444" />
+            <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Reaction Test</h4>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>F1 Start Simulator</p>
+          </div>
+        </Link>
       </div>
     </div>
   );
