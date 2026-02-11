@@ -218,11 +218,7 @@
             $scope.tick = () => {
                 if($scope.timer > 0) {
                     $timeout(() => {
-                        // FIX: Ensure it doesn't drop below 0
-                        if($scope.timer > 0) {
-                            $scope.timer--;
-                        }
-                        // Continue loop
+                        if($scope.timer > 0) $scope.timer--;
                         $scope.tick();
                     }, 1000);
                 }
@@ -244,22 +240,21 @@
             };
 
             $scope.checkAnswer = async (ans) => {
-                if($scope.timer <= 0) return; // Ignore clicks if Game Over
+                if($scope.timer <= 0) return;
 
                 if(ans === $scope.question.ans) {
-                    // CORRECT: +10 Points, +2 Seconds
+                    // CORRECT: Points + Bonus Time + Next Question
                     $scope.score += 10;
                     $scope.timer += 2;
-                    $scope.nextQuestion();
                     
                     if($scope.user && $scope.score > ($scope.user.math_score || 0)) {
                         $scope.user.math_score = $scope.score;
                         await updateDoc(doc(db, "users", $scope.user.uid), { math_score: $scope.score });
                     }
-                } else {
-                    // WRONG: No Time Penalty (As requested)
-                    // Just shake or do nothing
-                }
+                } 
+                // WRONG: Just move to next question (Logic falls through to nextQuestion() call)
+                
+                $scope.nextQuestion();
             };
 
             $scope.toggleView = async () => {
