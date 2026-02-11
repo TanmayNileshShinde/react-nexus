@@ -6,6 +6,7 @@
     <title>Math Blitz - React Nexus</title>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -35,27 +36,7 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Important for overlay */
         }
-
-        /* Game Over Overlay */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         h2.neon-title {
             font-size: 2rem;
@@ -88,7 +69,12 @@
             transition: all 0.2s;
         }
 
-        .option-btn:hover { background: rgba(188, 19, 254, 0.2); border-color: #bc13fe; transform: translateY(-2px); }
+        .option-btn:hover {
+            background: rgba(188, 19, 254, 0.2);
+            border-color: #bc13fe;
+            transform: translateY(-2px);
+        }
+
         .option-btn:active { transform: scale(0.95); }
 
         .action-row { display: flex; gap: 15px; margin-top: auto; }
@@ -98,7 +84,6 @@
         .user-pill { background: rgba(255, 255, 255, 0.05); padding: 5px 15px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; gap: 12px; }
 
         .question-box { font-size: 3rem; font-weight: 900; text-align: center; margin: 40px 0; text-shadow: 0 0 20px rgba(0, 243, 255, 0.3); }
-        
         .leaderboard-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); margin-bottom: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
@@ -128,25 +113,19 @@
                 Time: {{timer}}s | Score: <span style="color: white">{{score}}</span>
             </div>
 
-            <div class="question-box">{{question.text}}</div>
+            <div class="question-box" ng-show="timer > 0">
+                {{question.text}}
+            </div>
 
-            <div class="grid-options">
+            <div class="question-box" ng-show="timer <= 0" style="color: #ff4444; font-size: 2.5rem;">
+                GAME OVER
+            </div>
+
+            <div class="grid-options" ng-show="timer > 0">
                 <div class="option-btn" ng-repeat="opt in options" ng-click="checkAnswer(opt)">
                     {{opt}}
                 </div>
             </div>
-        </div>
-
-        <div class="overlay" ng-show="gameOver">
-            <i data-lucide="trophy" width="64" color="#ffcc00" style="margin-bottom: 20px;"></i>
-            <h2 style="font-size: 2.5rem; margin: 0; color: #ffcc00;">TIME'S UP!</h2>
-            <p style="font-size: 1.2rem; opacity: 0.8;">Final Score</p>
-            <div style="font-size: 4rem; font-weight: 900; color: white; margin-bottom: 30px;">
-                {{score}}
-            </div>
-            <button class="action-btn" ng-click="startGame()" style="width: 200px; background: #00f3ff; color: #000; border: none; font-size: 1.1rem;">
-                <i data-lucide="refresh-cw" width="20"></i> PLAY AGAIN
-            </button>
         </div>
 
         <div ng-show="view === 'leaderboard'" style="flex: 1; overflow-y: auto;">
@@ -180,9 +159,14 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // !!! IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE AGAIN !!!
         const firebaseConfig = {
-           // PASTE YOUR CONFIG FROM src/firebase.js HERE
+            apiKey: "AIzaSyARc1D7X5VV8HrRz7uyniBQ1Fw3CVqDbVU",
+            authDomain: "react-nexus-9798.firebaseapp.com",
+            projectId: "react-nexus-9798",
+            storageBucket: "react-nexus-9798.firebasestorage.app",
+            messagingSenderId: "195342203585",
+            appId: "1:195342203585:web:9e3f0065b4c144603f3240",
+            measurementId: "G-2J7JY2XJRN"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -197,7 +181,6 @@
             $scope.user = null;
             $scope.score = 0;
             $scope.timer = 30;
-            $scope.gameOver = false; // Controls overlay
             $scope.question = {};
             $scope.options = [];
             $scope.leaderboard = [];
@@ -228,33 +211,21 @@
             $scope.startGame = () => {
                 $scope.score = 0;
                 $scope.timer = 30;
-                $scope.gameOver = false; // Hide overlay
                 $scope.nextQuestion();
                 $scope.tick();
             };
 
             $scope.tick = () => {
-                // Stop if game over or timer already 0
-                if($scope.gameOver || $scope.timer <= 0) return;
-
-                $timeout(() => {
-                    if($scope.gameOver) return; // Double check inside timeout
-
-                    $scope.timer--;
-                    
-                    if($scope.timer <= 0) {
-                        $scope.timer = 0;
-                        $scope.endGame(); // Trigger Game Over
-                    } else {
-                        $scope.tick(); // Keep ticking
-                    }
-                }, 1000);
-            };
-
-            $scope.endGame = () => {
-                $scope.gameOver = true;
-                // Re-initialize icons for the overlay
-                setTimeout(() => lucide.createIcons(), 100);
+                if($scope.timer > 0) {
+                    $timeout(() => {
+                        // FIX: Ensure it doesn't drop below 0
+                        if($scope.timer > 0) {
+                            $scope.timer--;
+                        }
+                        // Continue loop
+                        $scope.tick();
+                    }, 1000);
+                }
             };
 
             $scope.nextQuestion = () => {
@@ -273,23 +244,21 @@
             };
 
             $scope.checkAnswer = async (ans) => {
-                // Prevent clicking if game is over
-                if($scope.gameOver || $scope.timer <= 0) return;
+                if($scope.timer <= 0) return; // Ignore clicks if Game Over
 
                 if(ans === $scope.question.ans) {
+                    // CORRECT: +10 Points, +2 Seconds
                     $scope.score += 10;
+                    $scope.timer += 2;
                     $scope.nextQuestion();
+                    
                     if($scope.user && $scope.score > ($scope.user.math_score || 0)) {
                         $scope.user.math_score = $scope.score;
                         await updateDoc(doc(db, "users", $scope.user.uid), { math_score: $scope.score });
                     }
                 } else {
-                    // FIX: Prevent negative numbers
-                    $scope.timer -= 5;
-                    if($scope.timer <= 0) {
-                        $scope.timer = 0;
-                        $scope.endGame();
-                    }
+                    // WRONG: No Time Penalty (As requested)
+                    // Just shake or do nothing
                 }
             };
 
