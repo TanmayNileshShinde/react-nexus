@@ -1,7 +1,7 @@
 // src/pages/ReactionGame.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, User, Zap, AlertCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Trophy, Zap, AlertCircle, RotateCcw } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
 // FIREBASE IMPORTS
@@ -10,22 +10,18 @@ import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 
 const ReactionGame = () => {
-  // --- STATES ---
   const [user, setUser] = useState(null);
   const [bestTime, setBestTime] = useState(null);
-  const [gameState, setGameState] = useState('idle'); // 'idle', 'counting', 'ready', 'result', 'foul'
-  const [lights, setLights] = useState(0); // 0 to 5 lights
+  const [gameState, setGameState] = useState('idle'); 
+  const [lights, setLights] = useState(0); 
   const [startTime, setStartTime] = useState(null);
   const [resultTime, setResultTime] = useState(null);
-  
   const timerRef = useRef(null);
 
-  // --- 1. AUTHENTICATION ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
-      
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
 
@@ -37,44 +33,33 @@ const ReactionGame = () => {
           total_xp: 0
         }, { merge: true });
       } else {
-        const data = docSnap.data();
-        setBestTime(data.best_reaction);
+        setBestTime(docSnap.data().best_reaction);
       }
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- 2. GAME LOGIC ---
   const startSequence = () => {
     setGameState('counting');
     setLights(0);
     setResultTime(null);
-
-    // Turn on lights 1-5 with 1-second intervals
     for (let i = 1; i <= 5; i++) {
-      setTimeout(() => {
-        setLights(i);
-      }, i * 1000);
+      setTimeout(() => { setLights(i); }, i * 1000);
     }
-
-    // Random delay after 5th light (2 to 5 seconds) before they go out
     const randomDelay = Math.floor(Math.random() * 3000) + 2000;
     timerRef.current = setTimeout(() => {
       setLights(0);
       setGameState('ready');
-      setStartTime(performance.now()); // High-precision timer
+      setStartTime(performance.now());
     }, 5000 + randomDelay);
   };
 
   const handleReaction = () => {
     if (gameState === 'counting') {
-      // CLICKED TOO EARLY (FOUL)
       clearTimeout(timerRef.current);
       setGameState('foul');
-      setLights(5); // Red lights stay on
+      setLights(5);
     } else if (gameState === 'ready') {
-      // VALID REACTION
-      const endTime = performance.now();
-      const reaction = Math.round(endTime - startTime);
+      const reaction = Math.round(performance.now() - startTime);
       setResultTime(reaction);
       setGameState('result');
       processScore(reaction);
@@ -83,130 +68,124 @@ const ReactionGame = () => {
 
   const processScore = async (time) => {
     if (!user) return;
-
-    let xpAwarded = 10;
-    if (time < 200) xpAwarded = 100;
-    else if (time < 300) xpAwarded = 50;
-
+    let xpAwarded = time < 200 ? 100 : time < 300 ? 50 : 10;
     const userRef = doc(db, "users", user.uid);
-    
-    // Update Best Time if better
     if (!bestTime || time < bestTime) {
       setBestTime(time);
-      await updateDoc(userRef, { 
-        best_reaction: time,
-        total_xp: increment(xpAwarded)
-      });
+      await updateDoc(userRef, { best_reaction: time, total_xp: increment(xpAwarded) });
     } else {
-      await updateDoc(userRef, { 
-        total_xp: increment(xpAwarded)
-      });
+      await updateDoc(userRef, { total_xp: increment(xpAwarded) });
     }
   };
 
-  // --- RENDER HELPERS ---
   const Light = ({ active }) => (
     <div style={{
-      width: '60px', height: '60px', borderRadius: '50%',
-      backgroundColor: active ? '#ff0000' : '#222',
-      boxShadow: active ? '0 0 20px #ff0000' : 'inset 0 0 10px #000',
-      border: '4px solid #444'
+      width: '65px', height: '65px', borderRadius: '50%',
+      backgroundColor: active ? '#ff0055' : 'rgba(255, 255, 255, 0.05)',
+      boxShadow: active ? '0 0 30px #ff0055, 0 0 60px #ff0055' : 'inset 0 0 15px rgba(0,0,0,0.5)',
+      border: active ? '2px solid #ff88aa' : '1px solid rgba(255, 255, 255, 0.1)',
+      transition: 'all 0.1s ease-in-out'
     }} />
   );
 
   return (
     <div className="glass-panel" style={{ 
-      width: '100%', maxWidth: '500px', minHeight: '600px', 
-      padding: '30px', position: 'relative', display: 'flex', flexDirection: 'column'
+        width: '100%', maxWidth: '500px', minHeight: '600px', 
+        padding: '30px', position: 'relative', display: 'flex', flexDirection: 'column',
+        border: '1px solid rgba(0, 243, 255, 0.3)',
+        boxShadow: '0 0 40px rgba(0, 243, 255, 0.1)'
     }}>
       
-      {/* HEADER */}
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <h2 style={{ 
-          fontSize: '2rem', fontWeight: '800', margin: 0, 
-          background: 'linear-gradient(to right, #ff0000, #ff8888)', WebkitBackgroundClip: 'text', color: 'transparent',
-          textTransform: 'uppercase', letterSpacing: '2px'
-        }}>
-          REACTION TEST
-        </h2>
-      </div>
+      <h2 style={{ 
+          textAlign: 'center', 
+          fontSize: '2.2rem', 
+          fontWeight: '900',
+          background: 'linear-gradient(to right, #00f3ff, #bc13fe)', 
+          WebkitBackgroundClip: 'text', 
+          color: 'transparent', 
+          textTransform: 'uppercase',
+          letterSpacing: '3px',
+          marginBottom: '20px'
+      }}>REACTION NEXUS</h2>
 
-      {/* USER PROFILE */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
         {!user ? (
           <button onClick={handleLogin} style={{ 
-            background: 'white', color: '#0f172a', border: 'none', padding: '8px 16px', 
-            borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer'
+            background: 'white', color: '#0f172a', border: 'none', padding: '10px 20px', 
+            borderRadius: '25px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 0 15px rgba(255,255,255,0.3)'
           }}>Login with Google</button>
         ) : (
-          <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '5px 15px', borderRadius: '30px', border: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.07)', padding: '8px 18px', borderRadius: '30px', border: '1px solid rgba(188, 19, 254, 0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{user.displayName}</div>
-                <div style={{ fontSize: '0.7rem', color: '#ff0000' }}>Best: {bestTime ? `${bestTime}ms` : '---'}</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>{user.displayName}</div>
+                <div style={{ fontSize: '0.75rem', color: '#00f3ff', fontWeight: 'bold' }}>BEST: {bestTime ? `${bestTime}ms` : '---'}</div>
              </div>
-             <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 32, height: 32, borderRadius: '50%' }}/>
+             <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 35, height: 35, borderRadius: '50%', border: '2px solid #bc13fe' }}/>
           </div>
         )}
       </div>
 
-      {/* GAME AREA */}
-      <div 
-        onClick={handleReaction}
-        style={{ 
-          flex: 1, background: 'rgba(0,0,0,0.3)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-        }}
-      >
+      <div onClick={handleReaction} style={{ 
+          flex: 1, 
+          background: 'rgba(255, 255, 255, 0.03)', 
+          borderRadius: '25px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          cursor: 'pointer',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          transition: 'background 0.3s'
+      }}>
         {gameState === 'idle' && (
           <div style={{ textAlign: 'center' }}>
-            <Zap size={64} color="#ffcc00" style={{ marginBottom: '20px' }} />
-            <h3>ARE YOU READY?</h3>
-            <button className={styles.button} onClick={(e) => { e.stopPropagation(); startSequence(); }} style={{ padding: '15px 30px' }}>START START START</button>
+            <Zap size={80} color="#00f3ff" style={{ filter: 'drop-shadow(0 0 15px #00f3ff)', marginBottom: '20px' }} />
+            <h3 style={{ letterSpacing: '2px', opacity: 0.8 }}>SYSTEMS READY</h3>
+            <button className={styles.button} onClick={(e) => { e.stopPropagation(); startSequence(); }} style={{ 
+                marginTop: '20px', padding: '15px 40px', background: 'rgba(0, 243, 255, 0.1)', border: '1px solid #00f3ff', color: '#00f3ff' 
+            }}>INITIATE START</button>
           </div>
         )}
 
         {(gameState === 'counting' || gameState === 'ready' || gameState === 'foul') && (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <Light active={lights >= 1} />
-            <Light active={lights >= 2} />
-            <Light active={lights >= 3} />
-            <Light active={lights >= 4} />
-            <Light active={lights >= 5} />
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {[1,2,3,4,5].map(i => <Light key={i} active={lights >= i} />)}
           </div>
         )}
 
         {gameState === 'ready' && (
-          <h2 style={{ position: 'absolute', bottom: '100px', color: '#00ff88' }}>GO! GO! GO!</h2>
+            <h1 style={{ color: '#00ff88', fontSize: '3.5rem', fontWeight: '900', textShadow: '0 0 30px #00ff88', marginTop: '40px' }}>GO!</h1>
         )}
 
         {gameState === 'foul' && (
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <AlertCircle size={48} color="#ff4444" />
-            <h2 style={{ color: '#ff4444' }}>JUMP START!</h2>
-            <button className={styles.button} onClick={(e) => { e.stopPropagation(); startSequence(); }}>TRY AGAIN</button>
+          <div style={{ textAlign: 'center', marginTop: '30px' }}>
+            <AlertCircle size={60} color="#ff4444" style={{ filter: 'drop-shadow(0 0 10px #ff4444)' }} />
+            <h2 style={{ color: '#ff4444', textShadow: '0 0 15px #ff4444' }}>JUMP START!</h2>
+            <button className={styles.button} onClick={(e) => { e.stopPropagation(); startSequence(); }} style={{ marginTop: '20px', border: '1px solid #ff4444', color: '#ff4444' }}>RESET LINEUP</button>
           </div>
         )}
 
         {gameState === 'result' && (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', opacity: 0.6 }}>YOUR TIME</div>
-            <div style={{ fontSize: '4rem', fontWeight: '900', color: resultTime < 300 ? '#00ff88' : 'white' }}>
-              {resultTime}ms
-            </div>
-            <p>{resultTime < 200 ? "⚡ GODLIKE REFLEXES!" : resultTime < 300 ? "🏎️ PRO DRIVER!" : "🐌 KEEP PRACTICING!"}</p>
-            <button className={styles.button} onClick={(e) => { e.stopPropagation(); startSequence(); }}>
-              <RotateCcw size={18}/> RETRY
+            <div style={{ fontSize: '1rem', opacity: 0.5, letterSpacing: '2px' }}>REACTION TIME</div>
+            <div style={{ 
+                fontSize: '5rem', 
+                fontWeight: '950', 
+                color: resultTime < 300 ? '#00ff88' : 'white',
+                textShadow: resultTime < 300 ? '0 0 40px rgba(0,255,136,0.6)' : 'none'
+            }}>{resultTime}ms</div>
+            <button className={styles.button} onClick={(e) => { e.stopPropagation(); startSequence(); }} style={{ marginTop: '20px', border: '1px solid #bc13fe', color: '#bc13fe' }}>
+                <RotateCcw size={20} style={{ marginRight: '10px' }}/> RE-RUN
             </button>
           </div>
         )}
       </div>
 
-      {/* NAVIGATION */}
-      <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+      <div style={{ display: 'flex', gap: '15px', marginTop: '25px' }}>
         <Link to="/" style={{ flex: 1, textDecoration: 'none' }}>
-          <button className={styles.button} style={{ width: '100%', padding: '15px' }}><ArrowLeft size={18}/> HOME</button>
+            <button className={styles.button} style={{ width: '100%', background: 'rgba(255, 255, 255, 0.05)' }}><ArrowLeft size={18}/> HUB</button>
         </Link>
-        <button className={styles.button} style={{ flex: 1, padding: '15px' }}><Trophy size={18}/> RANKS</button>
+        <button className={styles.button} style={{ flex: 1, background: 'rgba(188, 19, 254, 0.1)', border: '1px solid rgba(188, 19, 254, 0.3)' }}><Trophy size={18}/> RANKS</button>
       </div>
     </div>
   );
