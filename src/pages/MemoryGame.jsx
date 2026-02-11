@@ -1,7 +1,7 @@
 // src/pages/MemoryGame.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle, Plus } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
 // FIREBASE IMPORTS
@@ -10,7 +10,7 @@ import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 // CONFIGURATION
-const MAX_MOVES = 30; // Hard Mode: 30 clicks allowed
+const MAX_MOVES = 30; // Starting moves
 
 // F1 DRIVER DATA
 const DRIVERS = [
@@ -35,7 +35,7 @@ const MemoryGame = () => {
   const [movesLeft, setMovesLeft] = useState(MAX_MOVES);
   const [gameState, setGameState] = useState('playing'); // 'playing', 'won', 'lost'
   
-  // Specific Stats for F1 Game
+  // Stats & Leaderboard
   const [stats, setStats] = useState({ f1_wins: 0, f1_matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,16 +93,15 @@ const MemoryGame = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- 4. GAMEPLAY LOGIC ---
+  // --- 4. GAMEPLAY LOGIC (UPDATED) ---
   const handleClick = (id) => {
-    // Stop if disabled, card already flipped/solved, or game over
     if (disabled || flipped.includes(id) || solved.includes(id) || gameState !== 'playing') return;
     
-    // Decrement Moves on every click
+    // Decrease move immediately on click
     const newMoves = movesLeft - 1;
     setMovesLeft(newMoves);
 
-    // Check Loss Condition IMMEDIATELY
+    // Check Loss
     if (newMoves === 0) {
       setGameState('lost');
       setDisabled(true);
@@ -124,6 +123,11 @@ const MemoryGame = () => {
       setSolved((prev) => [...prev, flipped[0], id]);
       setFlipped([]);
       setDisabled(false);
+      
+      // --- NEW FEATURE: BONUS MOVES ---
+      // Add +2 moves for a correct match!
+      setMovesLeft((prev) => prev + 2);
+      
     } else {
       setTimeout(() => {
         setFlipped([]);
@@ -197,11 +201,20 @@ const MemoryGame = () => {
           <div className={styles.status} style={{ 
             color: gameState === 'won' ? '#00ff88' : gameState === 'lost' ? '#ff4444' : 'white',
             textShadow: gameState === 'won' ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
-            fontSize: '1.2rem', marginBottom: '20px', textAlign: 'center'
+            fontSize: '1.2rem', marginBottom: '20px', textAlign: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
           }}>
             {gameState === 'won' && "RACE FINISHED!"}
             {gameState === 'lost' && "OUT OF MOVES!"}
-            {gameState === 'playing' && `MOVES LEFT: ${movesLeft}`}
+            {gameState === 'playing' && (
+               <>
+                 MOVES LEFT: {movesLeft}
+                 {/* Small visual cue for the bonus mechanic */}
+                 <span style={{ fontSize: '0.7rem', color: '#00ff88', border: '1px solid #00ff88', padding: '2px 6px', borderRadius: '4px' }}>
+                   Match = +2
+                 </span>
+               </>
+            )}
           </div>
 
           {/* GAME OVER OVERLAY (If Lost) */}
@@ -272,7 +285,7 @@ const MemoryGame = () => {
         </div>
       )}
 
-      {/* VIEW: LEADERBOARD (Identical Style) */}
+      {/* VIEW: LEADERBOARD */}
       {view === 'leaderboard' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
