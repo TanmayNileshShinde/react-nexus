@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Blitz - React Nexus</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            min-height: 600px;
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Neon Text */
+        h2.neon-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 20px 0;
+            background: linear-gradient(to right, #00f3ff, #bc13fe);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        /* Buttons (Option Grid) */
+        .grid-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 25px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            background: rgba(188, 19, 254, 0.2);
+            border-color: #bc13fe;
+            transform: translateY(-2px);
+        }
+
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            gap: 15px;
+            margin-top: auto;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* Utility */
+        .login-btn {
+            background: white;
+            color: #0f172a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-pill {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 15px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .question-box {
+            font-size: 3rem;
+            font-weight: 900;
+            text-align: center;
+            margin: 40px 0;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+</head>
+
+<body ng-app="MathGame" ng-controller="GameCtrl">
+
+    <div class="glass-panel">
+        
+        <h2 class="neon-title">MATH BLITZ</h2>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+            <button class="login-btn" ng-if="!user" ng-click="login()">
+                <i data-lucide="user" width="16"></i> Login
+            </button>
+
+            <div class="user-pill" ng-if="user">
+                <div style="text-align: right;">
+                    <div style="font-size: 0.85rem; font-weight: bold;">{{user.displayName}}</div>
+                    <div style="font-size: 0.7rem; color: #bc13fe;">High Score: {{user.math_score || 0}}</div>
+                </div>
+                <img ng-src="{{user.photoURL}}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #bc13fe;">
+            </div>
+        </div>
+
+        <div ng-show="view === 'game'">
+            <div style="text-align: center; font-size: 1.2rem; color: #00f3ff;">
+                Time: {{timer}}s | Score: <span style="color: white">{{score}}</span>
+            </div>
+
+            <div class="question-box">
+                {{question.text}}
+            </div>
+
+            <div class="grid-options">
+                <div class="option-btn" ng-repeat="opt in options" ng-click="checkAnswer(opt)">
+                    {{opt}}
+                </div>
+            </div>
+        </div>
+
+        <div ng-show="view === 'leaderboard'" style="flex: 1; overflow-y: auto;">
+            <h3 style="color: #ffcc00; margin-top: 0;">Top Mathematicians</h3>
+            
+            <div class="leaderboard-item" ng-repeat="p in leaderboard">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #ffcc00; font-weight: bold;">#{{$index + 1}}</span>
+                    <img ng-src="{{p.photoURL}}" style="width: 30px; height: 30px; border-radius: 50%;">
+                    <span>{{p.displayName}}</span>
+                </div>
+                <span style="color: #bc13fe; font-weight: bold;">{{p.math_score}} pts</span>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <button class="action-btn" onclick="window.location.href='/'" style="background: rgba(255, 68, 68, 0.1); border: 1px solid rgba(255, 68, 68, 0.3);">
+                <i data-lucide="arrow-left" width="18"></i> HOME
+            </button>
+            <button class="action-btn" ng-click="toggleView()" style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.3);">
+                <i data-lucide="trophy" width="18"></i> RANKS
+            </button>
+            <button class="action-btn" ng-click="startGame()" style="background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3);">
+                <i data-lucide="refresh-cw" width="18"></i> RESET
+            </button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // --- 1. FIREBASE SETUP ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyARc1D7X5VV8HrRz7uyniBQ1Fw3CVqDbVU",
+            authDomain: "react-nexus-9798.firebaseapp.com",
+            projectId: "react-nexus-9798",
+            storageBucket: "react-nexus-9798.firebasestorage.app",
+            messagingSenderId: "195342203585",
+            appId: "1:195342203585:web:9e3f0065b4c144603f3240",
+            measurementId: "G-2J7JY2XJRN"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // --- 2. ANGULAR APP ---
+        const ngApp = angular.module('MathGame', []);
+
+        ngApp.controller('GameCtrl', function($scope, $timeout) {
+            $scope.view = 'game';
+            $scope.user = null;
+            $scope.score = 0;
+            $scope.timer = 30;
+            $scope.question = {};
+            $scope.options = [];
+            $scope.leaderboard = [];
+
+            // --- LOGIN LOGIC ---
+            $scope.login = async () => {
+                try {
+                    const result = await signInWithPopup(auth, provider);
+                    $scope.$apply(() => {
+                        $scope.user = result.user;
+                        $scope.loadUserData();
+                    });
+                } catch (e) { console.error(e); }
+            };
+
+            $scope.loadUserData = async () => {
+                if(!$scope.user) return;
+                const ref = doc(db, "users", $scope.user.uid);
+                const snap = await getDoc(ref);
+                if(snap.exists()) {
+                    $scope.$apply(() => $scope.user.math_score = snap.data().math_score || 0);
+                } else {
+                    await setDoc(ref, { 
+                        displayName: $scope.user.displayName, 
+                        photoURL: $scope.user.photoURL,
+                        math_score: 0 
+                    }, { merge: true });
+                }
+            };
+
+            // --- GAME LOGIC ---
+            $scope.startGame = () => {
+                $scope.score = 0;
+                $scope.timer = 30;
+                $scope.nextQuestion();
+                $scope.tick();
+            };
+
+            $scope.tick = () => {
+                if($scope.timer > 0) {
+                    $timeout(() => {
+                        $scope.timer--;
+                        $scope.tick();
+                    }, 1000);
+                }
+            };
+
+            $scope.nextQuestion = () => {
+                const a = Math.floor(Math.random() * 20) + 1;
+                const b = Math.floor(Math.random() * 20) + 1;
+                const isPlus = Math.random() > 0.5;
+                
+                const answer = isPlus ? a + b : a * b;
+                $scope.question = { 
+                    text: `${a} ${isPlus ? '+' : '×'} ${b} = ?`, 
+                    ans: answer 
+                };
+
+                // Generate Options
+                let opts = new Set([answer]);
+                while(opts.size < 4) {
+                    let fake = answer + Math.floor(Math.random() * 10) - 5;
+                    if(fake !== answer && fake > 0) opts.add(fake);
+                }
+                $scope.options = Array.from(opts).sort(() => Math.random() - 0.5);
+            };
+
+            $scope.checkAnswer = async (ans) => {
+                if($scope.timer <= 0) return;
+
+                if(ans === $scope.question.ans) {
+                    $scope.score += 10;
+                    $scope.nextQuestion();
+                    
+                    // Update High Score
+                    if($scope.user && $scope.score > ($scope.user.math_score || 0)) {
+                        $scope.user.math_score = $scope.score;
+                        await updateDoc(doc(db, "users", $scope.user.uid), { math_score: $scope.score });
+                    }
+                } else {
+                    $scope.timer -= 5; // Penalty
+                }
+            };
+
+            // --- LEADERBOARD ---
+            $scope.toggleView = async () => {
+                if($scope.view === 'game') {
+                    $scope.view = 'leaderboard';
+                    const q = query(collection(db, "users"), orderBy("math_score", "desc"), limit(10));
+                    const snap = await getDocs(q);
+                    $scope.$apply(() => {
+                        $scope.leaderboard = snap.docs.map(d => d.data());
+                    });
+                } else {
+                    $scope.view = 'game';
+                }
+            };
+
+            // Init Icons
+            setTimeout(() => lucide.createIcons(), 1000);
+            $scope.startGame();
+        });
+    </script>
+</body>
+</html>

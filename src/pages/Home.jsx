@@ -44,7 +44,7 @@ const Home = () => {
         </Link>
         
         {/* Card 2: AngularJS Module (External HTML) */}
-        <a href="/angular-dashboard.html" style={{ textDecoration: 'none' }}>
+        <a href="/math-game.html" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
             border: '1px solid #bc13fe',
