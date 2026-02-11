@@ -1,7 +1,8 @@
 // src/pages/Home.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2, FileText, List, Info } from 'lucide-react';
+// FIX: Added 'Grid' to the imports so the F1 icon works
+import { Gamepad2, FileText, List, Info, Grid } from 'lucide-react';
 
 const Home = () => {
   return (
@@ -21,7 +22,8 @@ const Home = () => {
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-        {/* Card 1: The Game */}
+        
+        {/* Card 1: Tic-Tac-Toe */}
         <Link to="/game" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
@@ -29,30 +31,59 @@ const Home = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            cursor: 'pointer'
-          }}>
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
             <Gamepad2 size={32} color="#00f3ff" />
             <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Tic-Tac-Toe</h4>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Vs AI & PvP</p>
           </div>
         </Link>
         
-        {/* Card 2: AngularJS Module */}
+        {/* Card 2: AngularJS Module (External HTML) */}
         <a href="/angular-dashboard.html" style={{ textDecoration: 'none' }}>
-        <div className="glass-panel" style={{ 
+          <div className="glass-panel" style={{ 
             padding: '20px', 
-            border: '1px solid #bc13fe', /* Different color for Angular */
+            border: '1px solid #bc13fe',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s'
-        }}>
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
             <FileText size={32} color="#bc13fe" />
             <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Angular Data</h4>
-        </div>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Student Records</p>
+          </div>
         </a>
         
-        {/* Card 3: Placeholder */}
+        {/* Card 3: F1 Memory Game */}
+        <Link to="/memory" style={{ textDecoration: 'none' }}>
+          <div className="glass-panel" style={{ 
+            padding: '20px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.2s',
+            border: '1px solid #ff4444'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Grid size={32} color="#ff4444" />
+            <h4 style={{ margin: '10px 0 5px 0', color: 'white' }}>F1 Memory</h4>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Match Drivers</p>
+          </div>
+        </Link>
+
+        {/* Card 4: Placeholder for Future Page */}
         <div className="glass-panel" style={{ 
           padding: '20px', 
           opacity: 0.5,
@@ -60,21 +91,10 @@ const Home = () => {
           flexDirection: 'column',
           alignItems: 'center'
         }}>
-          <List size={32} color="#bc13fe" />
-          <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>List (Empty)</h4>
+          <Info size={32} color="#888" />
+          <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Coming Soon</h4>
         </div>
 
-        {/* Card 4: Placeholder */}
-        <div className="glass-panel" style={{ 
-          padding: '20px', 
-          opacity: 0.5,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
-        }}>
-          <Info size={32} color="#bc13fe" />
-          <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>About (Empty)</h4>
-        </div>
       </div>
     </div>
   );
