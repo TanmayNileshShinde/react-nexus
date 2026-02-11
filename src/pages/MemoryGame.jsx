@@ -1,13 +1,16 @@
 // src/pages/MemoryGame.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, User, Grid, Flag } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+
+// CONFIGURATION
+const MAX_MOVES = 30; // Hard Mode: 30 clicks allowed
 
 // F1 DRIVER DATA
 const DRIVERS = [
@@ -24,12 +27,13 @@ const DRIVERS = [
 const MemoryGame = () => {
   // --- STATES ---
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('game'); // 'game', 'leaderboard'
+  const [view, setView] = useState('game'); 
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [solved, setSolved] = useState([]);
   const [disabled, setDisabled] = useState(false);
-  const [moves, setMoves] = useState(0);
+  const [movesLeft, setMovesLeft] = useState(MAX_MOVES);
+  const [gameState, setGameState] = useState('playing'); // 'playing', 'won', 'lost'
   
   // Specific Stats for F1 Game
   const [stats, setStats] = useState({ f1_wins: 0, f1_matches: 0 });
@@ -45,13 +49,14 @@ const MemoryGame = () => {
     setCards(shuffled);
     setFlipped([]);
     setSolved([]);
-    setMoves(0);
+    setMovesLeft(MAX_MOVES);
+    setGameState('playing');
     setDisabled(false);
   };
 
   useEffect(() => { shuffleCards(); }, []);
 
-  // --- 2. AUTHENTICATION & DATA SYNC ---
+  // --- 2. AUTHENTICATION ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -60,7 +65,6 @@ const MemoryGame = () => {
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
 
-      // Initialize F1 stats if they don't exist
       if (!docSnap.exists()) {
         await setDoc(userRef, { 
           displayName: result.user.displayName,
@@ -70,28 +74,20 @@ const MemoryGame = () => {
         setStats({ f1_wins: 0, f1_matches: 0 });
       } else {
         const data = docSnap.data();
-        await setDoc(userRef, { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL 
-        }, { merge: true });
-        // Load existing F1 stats or default to 0
+        await setDoc(userRef, { displayName: result.user.displayName, photoURL: result.user.photoURL }, { merge: true });
         setStats({ f1_wins: data.f1_wins || 0, f1_matches: data.f1_matches || 0 });
       }
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- 3. LEADERBOARD (Fetches f1_wins) ---
+  // --- 3. LEADERBOARD ---
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
     try {
-      // Query specific to F1 Wins
       const q = query(collection(db, "users"), orderBy("f1_wins", "desc"), limit(10));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => {
-        const d = doc.data();
-        return { ...d, f1_wins: d.f1_wins || 0 }; 
-      });
+      const data = querySnapshot.docs.map(doc => ({ ...doc.data(), f1_wins: doc.data().f1_wins || 0 }));
       setLeaderboardData(data);
     } catch (error) { console.error(error); } 
     finally { setIsLoading(false); }
@@ -99,8 +95,20 @@ const MemoryGame = () => {
 
   // --- 4. GAMEPLAY LOGIC ---
   const handleClick = (id) => {
-    if (disabled || flipped.includes(id) || solved.includes(id)) return;
+    // Stop if disabled, card already flipped/solved, or game over
+    if (disabled || flipped.includes(id) || solved.includes(id) || gameState !== 'playing') return;
     
+    // Decrement Moves on every click
+    const newMoves = movesLeft - 1;
+    setMovesLeft(newMoves);
+
+    // Check Loss Condition IMMEDIATELY
+    if (newMoves === 0) {
+      setGameState('lost');
+      setDisabled(true);
+      return;
+    }
+
     if (flipped.length === 0) {
       setFlipped([id]);
       return;
@@ -108,7 +116,6 @@ const MemoryGame = () => {
 
     setFlipped([flipped[0], id]);
     setDisabled(true);
-    setMoves((prev) => prev + 1);
 
     const firstCard = cards.find(c => c.u_id === flipped[0]);
     const secondCard = cards.find(c => c.u_id === id);
@@ -127,7 +134,8 @@ const MemoryGame = () => {
 
   // Check Win Condition
   useEffect(() => {
-    if (cards.length > 0 && solved.length === cards.length) {
+    if (gameState === 'playing' && cards.length > 0 && solved.length === cards.length) {
+      setGameState('won');
       if (user) updateStats();
     }
   }, [solved]);
@@ -135,10 +143,7 @@ const MemoryGame = () => {
   const updateStats = async () => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, {
-      f1_wins: increment(1), 
-      f1_matches: increment(1)
-    });
+    await updateDoc(userRef, { f1_wins: increment(1), f1_matches: increment(1) });
     setStats(prev => ({ ...prev, f1_wins: prev.f1_wins + 1 }));
   };
 
@@ -150,7 +155,7 @@ const MemoryGame = () => {
       display: 'flex', flexDirection: 'column'
     }}>
       
-      {/* HEADER (Same as TicTacToe) */}
+      {/* HEADER */}
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h2 style={{ 
           fontSize: '2rem', fontWeight: '800', margin: 0, 
@@ -165,7 +170,7 @@ const MemoryGame = () => {
       {view === 'game' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           
-          {/* Top Bar (Login/Stats) */}
+          {/* Top Bar */}
           <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', minHeight: '40px' }}>
             {!user ? (
               <button onClick={handleLogin} style={{ 
@@ -183,29 +188,41 @@ const MemoryGame = () => {
                   <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>{user.displayName}</div>
                   <div style={{ fontSize: '0.7rem', color: '#00ff88' }}>Wins: {stats.f1_wins}</div>
                 </div>
-                <img 
-                  src={user.photoURL} 
-                  alt="User" 
-                  referrerPolicy="no-referrer"
-                  style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #ff4444' }}
-                />
+                <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #ff4444' }}/>
               </div>
             )}
           </div>
 
-          {/* Game Status */}
+          {/* GAME STATUS / MOVES LEFT */}
           <div className={styles.status} style={{ 
-            color: solved.length === cards.length ? '#00ff88' : 'white',
-            textShadow: solved.length === cards.length ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
+            color: gameState === 'won' ? '#00ff88' : gameState === 'lost' ? '#ff4444' : 'white',
+            textShadow: gameState === 'won' ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
             fontSize: '1.2rem', marginBottom: '20px', textAlign: 'center'
           }}>
-            {solved.length === cards.length ? "RACE FINISHED!" : `MOVES: ${moves}`}
+            {gameState === 'won' && "RACE FINISHED!"}
+            {gameState === 'lost' && "OUT OF MOVES!"}
+            {gameState === 'playing' && `MOVES LEFT: ${movesLeft}`}
           </div>
+
+          {/* GAME OVER OVERLAY (If Lost) */}
+          {gameState === 'lost' && (
+            <div style={{ 
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+              background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' 
+            }}>
+              <AlertTriangle size={64} color="#ff4444" style={{ marginBottom: '20px' }}/>
+              <h2 style={{ color: '#ff4444', fontSize: '2rem', margin: 0 }}>CRASHED!</h2>
+              <p style={{ color: '#ccc', marginTop: '10px' }}>You ran out of moves.</p>
+              <button onClick={shuffleCards} style={{ marginTop: '20px', padding: '15px 30px', background: '#ff4444', color: 'white', border: 'none', borderRadius: '30px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>
+                RESTART RACE
+              </button>
+            </div>
+          )}
 
           {/* Grid Area */}
           <div style={{ 
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', 
-            perspective: '1000px', flex: 1, alignContent: 'center'
+            perspective: '1000px', flex: 1, alignContent: 'center', opacity: gameState === 'lost' ? 0.3 : 1
           }}>
             {cards.map((card) => {
               const isFlipped = flipped.includes(card.u_id) || solved.includes(card.u_id);
@@ -238,7 +255,7 @@ const MemoryGame = () => {
             })}
           </div>
 
-          {/* Bottom Buttons (Matched TicTacToe Style) */}
+          {/* Bottom Buttons */}
           <div style={{ display: 'flex', gap: '15px', marginTop: '30px' }}>
             <Link to="/" style={{ flex: 1, textDecoration: 'none' }}>
               <button className={styles.button} style={{ width: '100%', padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}>
