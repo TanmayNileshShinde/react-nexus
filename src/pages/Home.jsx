@@ -1,8 +1,6 @@
-// src/pages/Home.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-// FIX: Added 'Grid' to the imports so the F1 icon works
-import { Gamepad2, FileText, List, Info, Grid } from 'lucide-react';
+import { Gamepad2, FileText, Zap, LayoutGrid } from 'lucide-react';
 
 const Home = () => {
   return (
@@ -77,13 +75,13 @@ const Home = () => {
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Grid size={32} color="#ff4444" />
+            <LayoutGrid size={32} color="#ff4444" />
             <h4 style={{ margin: '10px 0 5px 0', color: 'white' }}>F1 Memory</h4>
             <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Match Drivers</p>
           </div>
         </Link>
 
-        {/* Card 4: Reaction Lights Game */}
+        {/* Card 4: Reaction Test */}
         <Link to="/reaction" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
