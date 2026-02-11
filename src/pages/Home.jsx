@@ -43,7 +43,7 @@ const Home = () => {
           </div>
         </Link>
         
-        {/* Card 2: AngularJS Module (External HTML) */}
+        {/* Card 2: Angular Math Blitz */}
         <a href="/math-game.html" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
@@ -58,8 +58,8 @@ const Home = () => {
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             <FileText size={32} color="#bc13fe" />
-            <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Angular Data</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Student Records</p>
+            <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Math Blitz</h4>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>AngularJS Quiz</p>
           </div>
         </a>
         
