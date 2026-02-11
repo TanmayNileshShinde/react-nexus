@@ -10,18 +10,66 @@ import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 // CONFIGURATION
-const MAX_MOVES = 30; // Starting moves
+const MAX_MOVES = 30;
 
-// F1 DRIVER DATA
+// F1 DRIVER DATA (Real Images)
 const DRIVERS = [
-  { id: 1, name: 'Verstappen', color: '#101C50', text: '#fff' },
-  { id: 2, name: 'Hamilton', color: '#00D2BE', text: '#000' },
-  { id: 3, name: 'Leclerc', color: '#EF1A2D', text: '#fff' },
-  { id: 4, name: 'Norris', color: '#FF8000', text: '#000' },
-  { id: 5, name: 'Alonso', color: '#006F62', text: '#fff' },
-  { id: 6, name: 'Piastri', color: '#FF8000', text: '#000' },
-  { id: 7, name: 'Russell', color: '#00D2BE', text: '#000' },
-  { id: 8, name: 'Sainz', color: '#EF1A2D', text: '#fff' },
+  { 
+    id: 1, 
+    name: 'Verstappen', 
+    color: '#101C50', 
+    text: '#fff',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Max_Verstappen_2017_Malaysia_3_%28cropped%29.jpg/240px-Max_Verstappen_2017_Malaysia_3_%28cropped%29.jpg' 
+  },
+  { 
+    id: 2, 
+    name: 'Hamilton', 
+    color: '#00D2BE', 
+    text: '#000',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Lewis_Hamilton_2016_Malaysia_2_%28cropped%29.jpg/240px-Lewis_Hamilton_2016_Malaysia_2_%28cropped%29.jpg'
+  },
+  { 
+    id: 3, 
+    name: 'Leclerc', 
+    color: '#EF1A2D', 
+    text: '#fff',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Charles_Leclerc_2019_China_%28cropped%29.jpg/240px-Charles_Leclerc_2019_China_%28cropped%29.jpg'
+  },
+  { 
+    id: 4, 
+    name: 'Norris', 
+    color: '#FF8000', 
+    text: '#000',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Lando_Norris_2019_China_%28cropped%29.jpg/240px-Lando_Norris_2019_China_%28cropped%29.jpg'
+  },
+  { 
+    id: 5, 
+    name: 'Alonso', 
+    color: '#006F62', 
+    text: '#fff',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Fernando_Alonso_2016_Malaysia_1_%28cropped%29.jpg/240px-Fernando_Alonso_2016_Malaysia_1_%28cropped%29.jpg'
+  },
+  { 
+    id: 6, 
+    name: 'Piastri', 
+    color: '#FF8000', 
+    text: '#000',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Oscar_Piastri_2022_Austria_1_%28cropped%29.jpg/240px-Oscar_Piastri_2022_Austria_1_%28cropped%29.jpg'
+  },
+  { 
+    id: 7, 
+    name: 'Russell', 
+    color: '#00D2BE', 
+    text: '#000',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/George_Russell_2019_China_%28cropped%29.jpg/240px-George_Russell_2019_China_%28cropped%29.jpg'
+  },
+  { 
+    id: 8, 
+    name: 'Sainz', 
+    color: '#EF1A2D', 
+    text: '#fff',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Carlos_Sainz_Jr._2016_Malaysia_1_%28cropped%29.jpg/240px-Carlos_Sainz_Jr._2016_Malaysia_1_%28cropped%29.jpg'
+  },
 ];
 
 const MemoryGame = () => {
@@ -33,9 +81,9 @@ const MemoryGame = () => {
   const [solved, setSolved] = useState([]);
   const [disabled, setDisabled] = useState(false);
   const [movesLeft, setMovesLeft] = useState(MAX_MOVES);
-  const [gameState, setGameState] = useState('playing'); // 'playing', 'won', 'lost'
+  const [gameState, setGameState] = useState('playing'); 
   
-  // Stats & Leaderboard
+  // Stats
   const [stats, setStats] = useState({ f1_wins: 0, f1_matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,15 +141,13 @@ const MemoryGame = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- 4. GAMEPLAY LOGIC (UPDATED) ---
+  // --- 4. GAMEPLAY LOGIC ---
   const handleClick = (id) => {
     if (disabled || flipped.includes(id) || solved.includes(id) || gameState !== 'playing') return;
     
-    // Decrease move immediately on click
     const newMoves = movesLeft - 1;
     setMovesLeft(newMoves);
 
-    // Check Loss
     if (newMoves === 0) {
       setGameState('lost');
       setDisabled(true);
@@ -123,11 +169,7 @@ const MemoryGame = () => {
       setSolved((prev) => [...prev, flipped[0], id]);
       setFlipped([]);
       setDisabled(false);
-      
-      // --- NEW FEATURE: BONUS MOVES ---
-      // Add +2 moves for a correct match!
-      setMovesLeft((prev) => prev + 2);
-      
+      setMovesLeft((prev) => prev + 2); // Bonus Moves
     } else {
       setTimeout(() => {
         setFlipped([]);
@@ -136,7 +178,7 @@ const MemoryGame = () => {
     }
   };
 
-  // Check Win Condition
+  // Check Win
   useEffect(() => {
     if (gameState === 'playing' && cards.length > 0 && solved.length === cards.length) {
       setGameState('won');
@@ -197,7 +239,7 @@ const MemoryGame = () => {
             )}
           </div>
 
-          {/* GAME STATUS / MOVES LEFT */}
+          {/* STATUS */}
           <div className={styles.status} style={{ 
             color: gameState === 'won' ? '#00ff88' : gameState === 'lost' ? '#ff4444' : 'white',
             textShadow: gameState === 'won' ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
@@ -207,17 +249,11 @@ const MemoryGame = () => {
             {gameState === 'won' && "RACE FINISHED!"}
             {gameState === 'lost' && "OUT OF MOVES!"}
             {gameState === 'playing' && (
-               <>
-                 MOVES LEFT: {movesLeft}
-                 {/* Small visual cue for the bonus mechanic */}
-                 <span style={{ fontSize: '0.7rem', color: '#00ff88', border: '1px solid #00ff88', padding: '2px 6px', borderRadius: '4px' }}>
-                   Match = +2
-                 </span>
-               </>
+               <>MOVES LEFT: {movesLeft} <span style={{ fontSize: '0.7rem', color: '#00ff88', border: '1px solid #00ff88', padding: '2px 6px', borderRadius: '4px' }}>Match = +2</span></>
             )}
           </div>
 
-          {/* GAME OVER OVERLAY (If Lost) */}
+          {/* OVERLAY: LOST */}
           {gameState === 'lost' && (
             <div style={{ 
               position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
@@ -225,14 +261,11 @@ const MemoryGame = () => {
             }}>
               <AlertTriangle size={64} color="#ff4444" style={{ marginBottom: '20px' }}/>
               <h2 style={{ color: '#ff4444', fontSize: '2rem', margin: 0 }}>CRASHED!</h2>
-              <p style={{ color: '#ccc', marginTop: '10px' }}>You ran out of moves.</p>
-              <button onClick={shuffleCards} style={{ marginTop: '20px', padding: '15px 30px', background: '#ff4444', color: 'white', border: 'none', borderRadius: '30px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>
-                RESTART RACE
-              </button>
+              <button onClick={shuffleCards} style={{ marginTop: '20px', padding: '15px 30px', background: '#ff4444', color: 'white', border: 'none', borderRadius: '30px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>RESTART RACE</button>
             </div>
           )}
 
-          {/* Grid Area */}
+          {/* GRID */}
           <div style={{ 
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', 
             perspective: '1000px', flex: 1, alignContent: 'center', opacity: gameState === 'lost' ? 0.3 : 1
@@ -253,34 +286,42 @@ const MemoryGame = () => {
                   }}>
                     <Flag size={20} color="rgba(255,255,255,0.3)"/>
                   </div>
-                  {/* BACK */}
+                  {/* BACK (WITH IMAGE) */}
                   <div style={{
                     position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
                     background: card.color, color: card.text, transform: 'rotateY(180deg)', borderRadius: '8px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.6rem', fontWeight: 'bold', border: '2px solid white'
+                    fontSize: '0.6rem', fontWeight: 'bold', border: '2px solid white', overflow: 'hidden'
                   }}>
-                    <img src={`https://ui-avatars.com/api/?name=${card.name}&background=random&color=fff&bold=true`} style={{ width: '60%', borderRadius: '50%', marginBottom: '2px' }}/>
-                    {card.name.substring(0, 3).toUpperCase()}
+                    <img 
+                        src={card.img} 
+                        alt={card.name} 
+                        style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover', // Ensures image fills the square
+                            opacity: 0.9
+                        }}
+                    />
+                    <div style={{
+                        position: 'absolute', bottom: 0, width: '100%', background: 'rgba(0,0,0,0.7)',
+                        color: 'white', padding: '2px 0', textAlign: 'center'
+                    }}>
+                        {card.name.substring(0, 3).toUpperCase()}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Bottom Buttons */}
+          {/* BOTTOM BUTTONS */}
           <div style={{ display: 'flex', gap: '15px', marginTop: '30px' }}>
             <Link to="/" style={{ flex: 1, textDecoration: 'none' }}>
-              <button className={styles.button} style={{ width: '100%', padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}>
-                <ArrowLeft size={18}/> HOME
-              </button>
+              <button className={styles.button} style={{ width: '100%', padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}><ArrowLeft size={18}/> HOME</button>
             </Link>
-             <button className={styles.button} onClick={fetchLeaderboard} style={{ flex: 1, padding: '15px', background: 'rgba(255, 204, 0, 0.1)', border: '1px solid rgba(255, 204, 0, 0.3)' }}>
-              <Trophy size={18}/> RANKS
-            </button>
-            <button className={styles.button} onClick={shuffleCards} style={{ flex: 1, padding: '15px', background: 'rgba(0, 243, 255, 0.1)', border: '1px solid rgba(0, 243, 255, 0.3)' }}>
-              <RefreshCw size={18}/> RESET
-            </button>
+             <button className={styles.button} onClick={fetchLeaderboard} style={{ flex: 1, padding: '15px', background: 'rgba(255, 204, 0, 0.1)', border: '1px solid rgba(255, 204, 0, 0.3)' }}><Trophy size={18}/> RANKS</button>
+            <button className={styles.button} onClick={shuffleCards} style={{ flex: 1, padding: '15px', background: 'rgba(0, 243, 255, 0.1)', border: '1px solid rgba(0, 243, 255, 0.3)' }}><RefreshCw size={18}/> RESET</button>
           </div>
         </div>
       )}
@@ -289,50 +330,27 @@ const MemoryGame = () => {
       {view === 'leaderboard' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-             <button onClick={() => setView('game')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-              <ArrowLeft size={24}/>
-            </button>
+             <button onClick={() => setView('game')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24}/></button>
             <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#ffcc00' }}>F1 Champions</h3>
           </div>
-
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
-            {isLoading ? (
-               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>Fetching Data...</div>
-            ) : leaderboardData.length === 0 ? (
-               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>No races yet.</div>
-            ) : (
-              leaderboardData.map((player, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '15px', marginBottom: '10px', borderRadius: '12px',
-                  background: index === 0 ? 'linear-gradient(90deg, rgba(255,215,0,0.2) 0%, rgba(255,255,255,0.05) 100%)' : 'rgba(255,255,255,0.05)',
-                  border: index === 0 ? '1px solid rgba(255,215,0,0.5)' : '1px solid rgba(255,255,255,0.05)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ 
-                      width: '30px', height: '30px', borderRadius: '50%', background: index === 0 ? '#ffd700' : 'rgba(255,255,255,0.1)', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: index === 0 ? 'black' : 'white'
-                    }}>
-                      {index + 1}
-                    </div>
-                    {player.photoURL && (
-                      <img src={player.photoURL} alt="Player" referrerPolicy="no-referrer" style={{ width: 40, height: 40, borderRadius: '50%' }} />
-                    )}
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{player.displayName || "Unknown"}</div>
-                      <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Racer</div>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '1.1rem' }}>{player.f1_wins} W</div>
-                  </div>
+            {leaderboardData.map((player, index) => (
+              <div key={index} style={{ 
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '15px', marginBottom: '10px', borderRadius: '12px',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <span style={{ color: index===0?'#ffd700':'white', fontWeight:'bold' }}>#{index+1}</span>
+                  {player.photoURL && <img src={player.photoURL} style={{ width: 40, height: 40, borderRadius: '50%' }} />}
+                  <span style={{ fontWeight: 'bold' }}>{player.displayName}</span>
                 </div>
-              ))
-            )}
+                <span style={{ color: '#00ff88', fontWeight: 'bold' }}>{player.f1_wins} W</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
-
     </div>
   );
 };
