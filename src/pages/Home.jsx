@@ -85,7 +85,7 @@ const Home = () => {
         <Link to="/reaction" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
-            border: '1px solid #ff4444',
+            border: '1px solid #00af3a',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
