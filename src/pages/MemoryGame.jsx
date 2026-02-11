@@ -1,7 +1,7 @@
 // src/pages/MemoryGame.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle, Plus } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
 // FIREBASE IMPORTS
@@ -9,67 +9,33 @@ import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
-// CONFIGURATION
-const MAX_MOVES = 30;
+// --- CONFIGURATION ---
+const MAX_MOVES = 30; // Starting moves
 
-// F1 DRIVER DATA (Real Images)
-const DRIVERS = [
-  { 
-    id: 1, 
-    name: 'Verstappen', 
-    color: '#101C50', 
-    text: '#fff',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Max_Verstappen_2017_Malaysia_3_%28cropped%29.jpg/240px-Max_Verstappen_2017_Malaysia_3_%28cropped%29.jpg' 
-  },
-  { 
-    id: 2, 
-    name: 'Hamilton', 
-    color: '#00D2BE', 
-    text: '#000',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Lewis_Hamilton_2016_Malaysia_2_%28cropped%29.jpg/240px-Lewis_Hamilton_2016_Malaysia_2_%28cropped%29.jpg'
-  },
-  { 
-    id: 3, 
-    name: 'Leclerc', 
-    color: '#EF1A2D', 
-    text: '#fff',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Charles_Leclerc_2019_China_%28cropped%29.jpg/240px-Charles_Leclerc_2019_China_%28cropped%29.jpg'
-  },
-  { 
-    id: 4, 
-    name: 'Norris', 
-    color: '#FF8000', 
-    text: '#000',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Lando_Norris_2019_China_%28cropped%29.jpg/240px-Lando_Norris_2019_China_%28cropped%29.jpg'
-  },
-  { 
-    id: 5, 
-    name: 'Alonso', 
-    color: '#006F62', 
-    text: '#fff',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Fernando_Alonso_2016_Malaysia_1_%28cropped%29.jpg/240px-Fernando_Alonso_2016_Malaysia_1_%28cropped%29.jpg'
-  },
-  { 
-    id: 6, 
-    name: 'Piastri', 
-    color: '#FF8000', 
-    text: '#000',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Oscar_Piastri_2022_Austria_1_%28cropped%29.jpg/240px-Oscar_Piastri_2022_Austria_1_%28cropped%29.jpg'
-  },
-  { 
-    id: 7, 
-    name: 'Russell', 
-    color: '#00D2BE', 
-    text: '#000',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/George_Russell_2019_China_%28cropped%29.jpg/240px-George_Russell_2019_China_%28cropped%29.jpg'
-  },
-  { 
-    id: 8, 
-    name: 'Sainz', 
-    color: '#EF1A2D', 
-    text: '#fff',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Carlos_Sainz_Jr._2016_Malaysia_1_%28cropped%29.jpg/240px-Carlos_Sainz_Jr._2016_Malaysia_1_%28cropped%29.jpg'
-  },
+// --- THE 2026 GRID (22 DRIVERS) ---
+const ALL_DRIVERS = [
+  { id: 1, name: 'Albon', color: '#005AFF', img: '/drivers/albon.webp' },
+  { id: 2, name: 'Alonso', color: '#006F62', img: '/drivers/alonso.webp' },
+  { id: 3, name: 'Antonelli', color: '#00D2BE', img: '/drivers/antonelli.webp' },
+  { id: 4, name: 'Bearman', color: '#B6BABD', img: '/drivers/bearman.webp' },
+  { id: 5, name: 'Bortoleto', color: '#00e701', img: '/drivers/bortoleto.webp' },
+  { id: 6, name: 'Bottas', color: '#B6BABD', img: '/drivers/bottas.webp' },
+  { id: 7, name: 'Colapinto', color: '#005AFF', img: '/drivers/colapinto.webp' },
+  { id: 8, name: 'Gasly', color: '#FF87BC', img: '/drivers/gasly.webp' },
+  { id: 9, name: 'Hadjar', color: '#6692FF', img: '/drivers/hadjar.webp' },
+  { id: 10, name: 'Hamilton', color: '#EF1A2D', img: '/drivers/hamilton.webp' },
+  { id: 11, name: 'Hulkenberg', color: '#00e701', img: '/drivers/hulkenberg.webp' },
+  { id: 12, name: 'Lawson', color: '#6692FF', img: '/drivers/lawson.webp' },
+  { id: 13, name: 'Leclerc', color: '#EF1A2D', img: '/drivers/leclerc.webp' },
+  { id: 14, name: 'Lindblad', color: '#101C50', img: '/drivers/lindblad.webp' },
+  { id: 15, name: 'Norris', color: '#FF8000', img: '/drivers/norris.webp' },
+  { id: 16, name: 'Ocon', color: '#B6BABD', img: '/drivers/ocon.webp' },
+  { id: 17, name: 'Perez', color: '#101C50', img: '/drivers/perez.webp' },
+  { id: 18, name: 'Piastri', color: '#FF8000', img: '/drivers/piastri.webp' },
+  { id: 19, name: 'Russell', color: '#00D2BE', img: '/drivers/russell.webp' },
+  { id: 20, name: 'Sainz', color: '#005AFF', img: '/drivers/sainz.webp' },
+  { id: 21, name: 'Stroll', color: '#006F62', img: '/drivers/stroll.webp' },
+  { id: 22, name: 'Verstappen', color: '#101C50', img: '/drivers/verstappen.webp' }
 ];
 
 const MemoryGame = () => {
@@ -81,20 +47,24 @@ const MemoryGame = () => {
   const [solved, setSolved] = useState([]);
   const [disabled, setDisabled] = useState(false);
   const [movesLeft, setMovesLeft] = useState(MAX_MOVES);
-  const [gameState, setGameState] = useState('playing'); 
+  const [gameState, setGameState] = useState('playing'); // 'playing', 'won', 'lost'
   
   // Stats
   const [stats, setStats] = useState({ f1_wins: 0, f1_matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // --- 1. GAME SETUP ---
+  // --- 1. GAME SETUP (RANDOMIZER) ---
   const shuffleCards = () => {
-    const shuffled = [...DRIVERS, ...DRIVERS]
+    // 1. Randomly pick 8 drivers from the 22 available
+    const shuffledPool = [...ALL_DRIVERS].sort(() => 0.5 - Math.random());
+    const selectedDrivers = shuffledPool.slice(0, 8);
+
+    // 2. Duplicate them to make pairs (16 cards total)
+    const deck = [...selectedDrivers, ...selectedDrivers]
       .sort(() => Math.random() - 0.5)
       .map((driver) => ({ ...driver, u_id: Math.random() }));
 
-    setCards(shuffled);
+    setCards(deck);
     setFlipped([]);
     setSolved([]);
     setMovesLeft(MAX_MOVES);
@@ -131,29 +101,28 @@ const MemoryGame = () => {
   // --- 3. LEADERBOARD ---
   const fetchLeaderboard = async () => {
     setView('leaderboard');
-    setIsLoading(true);
-    try {
-      const q = query(collection(db, "users"), orderBy("f1_wins", "desc"), limit(10));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ ...doc.data(), f1_wins: doc.data().f1_wins || 0 }));
-      setLeaderboardData(data);
-    } catch (error) { console.error(error); } 
-    finally { setIsLoading(false); }
+    const q = query(collection(db, "users"), orderBy("f1_wins", "desc"), limit(10));
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map(doc => ({ ...doc.data(), f1_wins: doc.data().f1_wins || 0 }));
+    setLeaderboardData(data);
   };
 
   // --- 4. GAMEPLAY LOGIC ---
   const handleClick = (id) => {
     if (disabled || flipped.includes(id) || solved.includes(id) || gameState !== 'playing') return;
     
+    // Decrease Move Count
     const newMoves = movesLeft - 1;
     setMovesLeft(newMoves);
 
+    // Check Loss
     if (newMoves === 0) {
       setGameState('lost');
       setDisabled(true);
       return;
     }
 
+    // Flip Logic
     if (flipped.length === 0) {
       setFlipped([id]);
       return;
@@ -166,11 +135,13 @@ const MemoryGame = () => {
     const secondCard = cards.find(c => c.u_id === id);
 
     if (firstCard.name === secondCard.name) {
+      // MATCH FOUND
       setSolved((prev) => [...prev, flipped[0], id]);
       setFlipped([]);
       setDisabled(false);
-      setMovesLeft((prev) => prev + 2); // Bonus Moves
+      setMovesLeft((prev) => prev + 2); // Bonus Moves!
     } else {
+      // NO MATCH
       setTimeout(() => {
         setFlipped([]);
         setDisabled(false);
@@ -178,7 +149,7 @@ const MemoryGame = () => {
     }
   };
 
-  // Check Win
+  // Check Win Condition
   useEffect(() => {
     if (gameState === 'playing' && cards.length > 0 && solved.length === cards.length) {
       setGameState('won');
@@ -289,19 +260,15 @@ const MemoryGame = () => {
                   {/* BACK (WITH IMAGE) */}
                   <div style={{
                     position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
-                    background: card.color, color: card.text, transform: 'rotateY(180deg)', borderRadius: '8px',
+                    background: card.color, color: 'white', transform: 'rotateY(180deg)', borderRadius: '8px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.6rem', fontWeight: 'bold', border: '2px solid white', overflow: 'hidden'
                   }}>
                     <img 
                         src={card.img} 
                         alt={card.name} 
-                        style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            objectFit: 'cover', // Ensures image fills the square
-                            opacity: 0.9
-                        }}
+                        onError={(e) => {e.target.style.display='none'}} // Hides broken images cleanly
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }}
                     />
                     <div style={{
                         position: 'absolute', bottom: 0, width: '100%', background: 'rgba(0,0,0,0.7)',
