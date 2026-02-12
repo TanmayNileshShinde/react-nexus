@@ -97,7 +97,7 @@ const Home = () => {
           >
             <Zap size={32} color="#00af3a" />
             <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Reaction Test</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>F1 Start Simulator</p>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Test Your Reactions</p>
           </div>
         </Link>
       </div>
