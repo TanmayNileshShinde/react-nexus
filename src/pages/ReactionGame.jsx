@@ -28,7 +28,12 @@ const ReactionGame = () => {
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
       if (!docSnap.exists()) {
-        await setDoc(userRef, { displayName: result.user.displayName, photoURL: result.user.photoURL, best_reaction: null, total_xp: 0 }, { merge: true });
+        await setDoc(userRef, { 
+            displayName: result.user.displayName, 
+            photoURL: result.user.photoURL, 
+            best_reaction: null, 
+            total_xp: 0 
+        }, { merge: true });
       } else {
         setBestTime(docSnap.data().best_reaction);
       }
@@ -91,118 +96,142 @@ const ReactionGame = () => {
   // --- UI COMPONENTS ---
   const Light = ({ active }) => (
     <div style={{
-      width: '60px', height: '60px', borderRadius: '50%',
-      backgroundColor: active ? '#ff0055' : 'rgba(255, 255, 255, 0.03)',
-      boxShadow: active ? '0 0 25px #ff0055, 0 0 50px #ff0055' : 'inset 0 0 10px rgba(0,0,0,0.8)',
-      border: active ? '2px solid #ff88aa' : '1px solid rgba(255, 255, 255, 0.1)',
-      transition: 'all 0.1s ease'
-    }} />
+      width: '60px',
+      height: '60px',
+      borderRadius: '50%',
+      backgroundColor: active ? '#ff0055' : 'rgba(255, 255, 255, 0.02)',
+      // Multiple shadows create the high-intensity glow effect
+      boxShadow: active 
+        ? '0 0 20px #ff0055, 0 0 40px #ff0055, inset 0 0 10px #ff88aa' 
+        : 'inset 0 0 15px rgba(0,0,0,0.9)',
+      border: active ? '2px solid #ff88aa' : '1px solid rgba(255, 255, 255, 0.05)',
+      transition: 'all 0.05s ease-out',
+      position: 'relative'
+    }}>
+        {active && <div style={{
+            position: 'absolute', top: '20%', left: '20%', width: '15px', height: '10px',
+            background: 'rgba(255,255,255,0.4)', borderRadius: '50%', filter: 'blur(2px)'
+        }} />}
+    </div>
   );
 
   return (
     <div className="glass-panel" style={{ 
-        width: '100%', maxWidth: '500px', minHeight: '650px', 
+        width: '100%', maxWidth: '500px', minHeight: '680px', 
         padding: '35px', position: 'relative', display: 'flex', flexDirection: 'column',
-        border: '1px solid rgba(0, 243, 255, 0.4)',
-        boxShadow: '0 0 50px rgba(0, 243, 255, 0.15)'
+        border: '1px solid rgba(0, 243, 255, 0.5)',
+        boxShadow: '0 0 60px rgba(0, 243, 255, 0.2)',
+        background: 'rgba(15, 23, 42, 0.85)'
     }}>
       
-      {/* TITLE SECTION */}
-      <h2 style={{ 
-          textAlign: 'center', 
-          fontSize: '2.4rem', 
-          fontWeight: '950',
-          background: 'linear-gradient(to right, #00f3ff, #bc13fe)', 
-          WebkitBackgroundClip: 'text', 
-          color: 'transparent', 
-          textTransform: 'uppercase',
-          letterSpacing: '4px',
-          margin: '0 0 20px 0',
-          filter: 'drop-shadow(0 0 10px rgba(188, 19, 254, 0.3))'
-      }}>REACTION</h2>
+      {/* GLOWING HEADER */}
+      <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+        <h2 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: '1000',
+            background: 'linear-gradient(to right, #00f3ff, #bc13fe)', 
+            WebkitBackgroundClip: 'text', 
+            color: 'transparent', 
+            textTransform: 'uppercase',
+            letterSpacing: '5px',
+            margin: 0,
+            filter: 'drop-shadow(0 0 15px rgba(0, 243, 255, 0.5))'
+        }}>REACTION</h2>
+        <div style={{ width: '60px', height: '3px', background: '#00f3ff', margin: '5px auto', boxShadow: '0 0 10px #00f3ff' }}></div>
+      </div>
 
-      {/* USER PROFILE PILL */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '25px' }}>
+      {/* TOP STATS BAR */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+        <div style={{ fontSize: '0.8rem', color: '#888', letterSpacing: '1px' }}>SYSTEM_v2.0.26</div>
         {!user ? (
           <button onClick={handleLogin} style={{ 
-            background: 'white', color: '#0f172a', border: 'none', padding: '10px 22px', 
-            borderRadius: '25px', fontWeight: '900', cursor: 'pointer',
+            background: 'white', color: '#0f172a', border: 'none', padding: '8px 20px', 
+            borderRadius: '20px', fontWeight: '900', cursor: 'pointer',
             boxShadow: '0 0 20px rgba(255,255,255,0.4)'
           }}>LOGIN</button>
         ) : (
           <div style={{ 
-              background: 'rgba(15, 23, 42, 0.6)', padding: '8px 20px', borderRadius: '40px', 
-              border: '1px solid #bc13fe', display: 'flex', alignItems: 'center', gap: '15px',
-              boxShadow: '0 0 15px rgba(188, 19, 254, 0.2)'
+              background: 'rgba(255, 255, 255, 0.05)', padding: '5px 15px', borderRadius: '30px', 
+              border: '1px solid #bc13fe', display: 'flex', alignItems: 'center', gap: '12px',
+              boxShadow: '0 0 10px rgba(188, 19, 254, 0.2)'
           }}>
              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>{user.displayName}</div>
-                <div style={{ fontSize: '0.75rem', color: '#00f3ff', fontWeight: '800' }}>{bestTime ? `${bestTime}MS` : '---'}</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{user.displayName.split(' ')[0]}</div>
+                <div style={{ fontSize: '0.7rem', color: '#00f3ff', fontWeight: '900' }}>BEST: {bestTime || '---'}</div>
              </div>
-             <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid #00f3ff' }}/>
+             <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid #00f3ff' }}/>
           </div>
         )}
       </div>
 
-      {/* MAIN GAME CONSOLE */}
+      {/* THE MAIN CONSOLE */}
       <div onClick={handleReaction} style={{ 
           flex: 1, 
-          background: 'rgba(0, 0, 0, 0.4)', 
-          borderRadius: '30px', 
+          background: 'linear-gradient(180deg, #0a0f1e 0%, #000 100%)', 
+          borderRadius: '25px', 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
           justifyContent: 'center', 
           cursor: 'pointer',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.8)'
       }}>
+        {/* SCANLINE OVERLAY EFFECT */}
+        <div style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))',
+            backgroundSize: '100% 4px, 3px 100%', pointerEvents: 'none', zIndex: 1
+        }}></div>
+
         {view === 'game' ? (
-          <>
+          <div style={{ zIndex: 2 }}>
             {gameState === 'idle' && (
-              <div style={{ textAlign: 'center', animation: 'pulse 2s infinite' }}>
-                <Zap size={85} color="#00f3ff" style={{ filter: 'drop-shadow(0 0 20px #00f3ff)' }} />
-                <h2 style={{ color: '#00f3ff', letterSpacing: '5px', marginTop: '15px' }}>STANDBY</h2>
+              <div style={{ textAlign: 'center' }}>
+                <Zap size={70} color="#00f3ff" style={{ filter: 'drop-shadow(0 0 15px #00f3ff)', animation: 'pulse 1.5s infinite' }} />
+                <h2 style={{ color: '#00f3ff', letterSpacing: '5px', marginTop: '10px', fontSize: '1rem' }}>READY TO LAUNCH</h2>
               </div>
             )}
             {(gameState === 'counting' || gameState === 'ready' || gameState === 'foul') && (
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 {[1,2,3,4,5].map(i => <Light key={i} active={lights >= i} />)}
               </div>
             )}
             {gameState === 'ready' && (
-                <h1 style={{ color: '#00ff88', fontSize: '5rem', fontWeight: '950', textShadow: '0 0 40px #00ff88' }}>GO!</h1>
+                <h1 style={{ color: '#00ff88', fontSize: '6rem', fontWeight: '1000', textShadow: '0 0 40px #00ff88', margin: 0 }}>GO!</h1>
             )}
             {gameState === 'foul' && (
                 <div style={{ textAlign: 'center' }}>
-                    <AlertCircle size={70} color="#ff4444" style={{ filter: 'drop-shadow(0 0 15px #ff4444)' }} />
-                    <h2 style={{ color: '#ff4444', letterSpacing: '2px' }}>FALSE START</h2>
+                    <AlertCircle size={70} color="#ff4444" style={{ filter: 'drop-shadow(0 0 20px #ff4444)' }} />
+                    <h1 style={{ color: '#ff4444', letterSpacing: '2px', margin: '10px 0 0 0' }}>FOUL</h1>
                 </div>
             )}
             {gameState === 'result' && (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.2rem', opacity: 0.5, letterSpacing: '3px' }}>REACTION</div>
+                <div style={{ fontSize: '1rem', opacity: 0.5, letterSpacing: '4px' }}>REACTION_TIME</div>
                 <div style={{ 
-                    fontSize: '6rem', 
+                    fontSize: '7rem', 
                     fontWeight: '1000', 
+                    lineHeight: '1',
                     color: resultTime < 300 ? '#00ff88' : 'white',
-                    textShadow: resultTime < 300 ? '0 0 50px rgba(0,255,136,0.5)' : 'none'
-                }}>{resultTime}<span style={{ fontSize: '2rem' }}>ms</span></div>
+                    textShadow: resultTime < 300 ? '0 0 50px rgba(0,255,136,0.6)' : 'none'
+                }}>{resultTime}<span style={{ fontSize: '1.5rem', marginLeft: '5px' }}>MS</span></div>
               </div>
             )}
-          </>
+          </div>
         ) : (
           /* LEADERBOARD UI */
-          <div style={{ width: '100%', padding: '20px', height: '100%', overflowY: 'auto' }}>
-            <h3 style={{ color: '#ffcc00', textAlign: 'center', letterSpacing: '3px', marginBottom: '20px' }}>HALL OF FAME</h3>
+          <div style={{ width: '100%', padding: '25px', zIndex: 2, height: '100%', overflowY: 'auto' }}>
+            <h3 style={{ color: '#ffcc00', textAlign: 'center', letterSpacing: '5px', fontSize: '0.9rem', marginBottom: '20px' }}>RANKING_DATA</h3>
             {leaderboard.map((u, i) => (
               <div key={i} style={{ 
-                  display: 'flex', justifyContent: 'space-between', padding: '15px', 
-                  background: 'rgba(255,255,255,0.04)', marginBottom: '8px', borderRadius: '15px',
+                  display: 'flex', justifyContent: 'space-between', padding: '12px 18px', 
+                  background: 'rgba(255,255,255,0.03)', marginBottom: '10px', borderRadius: '12px',
                   border: '1px solid rgba(255,255,255,0.05)'
               }}>
-                <span style={{ fontWeight: '800' }}><span style={{ color: '#ffcc00' }}>#{i+1}</span> {u.displayName}</span>
+                <span style={{ fontWeight: '800', fontSize: '0.9rem' }}><span style={{ color: '#ffcc00' }}>{i+1}</span> {u.displayName.toUpperCase()}</span>
                 <span style={{ color: '#00f3ff', fontWeight: '900' }}>{u.best_reaction}ms</span>
               </div>
             ))}
@@ -210,25 +239,29 @@ const ReactionGame = () => {
         )}
       </div>
 
-      {/* BOTTOM CONTROL BAR */}
-      <div style={{ display: 'flex', gap: '12px', marginTop: '30px' }}>
-        <Link to="/" style={{ flex: 1, textDecoration: 'none' }}>
-            <button className={styles.button} style={{ width: '100%', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.4)' }}>
-                <Home size={20}/>
+      {/* DYNAMIC ACTION BAR */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '15px', marginTop: '30px' }}>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+            <button className={styles.button} style={{ 
+                width: '100%', height: '55px', background: 'rgba(255, 68, 68, 0.05)', border: '1px solid rgba(255, 68, 68, 0.3)' 
+            }}>
+                <Home size={22} color="#ff4444" />
             </button>
         </Link>
         
         <button className={styles.button} onClick={fetchLeaderboard} style={{ 
-            flex: 1, background: 'rgba(188, 19, 254, 0.1)', border: '1px solid rgba(188, 19, 254, 0.5)' 
+            height: '55px', background: 'rgba(188, 19, 254, 0.05)', border: '1px solid rgba(188, 19, 254, 0.3)' 
         }}>
-            {view === 'game' ? <><Trophy size={20}/></> : <><ArrowLeft size={20}/></>}
+            {view === 'game' ? <Trophy size={22} color="#bc13fe"/> : <ArrowLeft size={22} color="#bc13fe"/>}
         </button>
 
         <button className={styles.button} onClick={startSequence} style={{ 
-            flex: 2, background: 'rgba(0, 243, 255, 0.15)', border: '1px solid #00f3ff', color: '#00f3ff', fontWeight: '900' 
+            height: '55px', background: 'rgba(0, 243, 255, 0.1)', border: '1px solid #00f3ff', 
+            color: '#00f3ff', fontWeight: '1000', fontSize: '1rem', letterSpacing: '2px',
+            boxShadow: '0 0 15px rgba(0, 243, 255, 0.2)'
         }}>
             <RotateCcw size={20} style={{ marginRight: '10px' }}/> 
-            {gameState === 'idle' ? 'LAUNCH' : 'RE-RUN'}
+            {gameState === 'idle' ? 'LAUNCH' : 'RESTART'}
         </button>
       </div>
 
