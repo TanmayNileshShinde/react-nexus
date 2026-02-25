@@ -1,53 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, Flag } from 'lucide-react';
-import styles from '../styles/Game.module.css';
+import { ArrowLeft, RefreshCw, Trophy, ChevronUp, ChevronDown, Flag } from 'lucide-react';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
-// --- F1 DRIVER DATABASE (RACE WINS) ---
+// --- F1 DRIVER DATABASE (IMAGES & WINS) ---
 const f1Data = [
-  { name: "Lewis Hamilton", wins: 105, flag: "🇬🇧" },
-  { name: "Michael Schumacher", wins: 91, flag: "🇩🇪" },
-  { name: "Max Verstappen", wins: 62, flag: "🇳🇱" },
-  { name: "Sebastian Vettel", wins: 53, flag: "🇩🇪" },
-  { name: "Alain Prost", wins: 51, flag: "🇫🇷" },
-  { name: "Ayrton Senna", wins: 41, flag: "🇧🇷" },
-  { name: "Fernando Alonso", wins: 32, flag: "🇪🇸" },
-  { name: "Nigel Mansell", wins: 31, flag: "🇬🇧" },
-  { name: "Jackie Stewart", wins: 27, flag: "🇬🇧" },
-  { name: "Niki Lauda", wins: 25, flag: "🇦🇹" },
-  { name: "Nico Rosberg", wins: 23, flag: "🇩🇪" },
-  { name: "Kimi Raikkonen", wins: 21, flag: "🇫🇮" },
-  { name: "Mika Hakkinen", wins: 20, flag: "🇫🇮" },
-  { name: "Jenson Button", wins: 15, flag: "🇬🇧" },
-  { name: "David Coulthard", wins: 13, flag: "🇬🇧" },
-  { name: "Valtteri Bottas", wins: 10, flag: "🇫🇮" },
-  { name: "Mark Webber", wins: 9, flag: "🇦🇺" },
-  { name: "Charles Leclerc", wins: 8, flag: "🇲🇨" },
-  { name: "Daniel Ricciardo", wins: 8, flag: "🇦🇺" },
-  { name: "Sergio Perez", wins: 6, flag: "🇲🇽" },
-  { name: "Carlos Sainz", wins: 4, flag: "🇪🇸" },
-  { name: "Lando Norris", wins: 3, flag: "🇬🇧" },
-  { name: "George Russell", wins: 2, flag: "🇬🇧" },
-  { name: "Oscar Piastri", wins: 2, flag: "🇦🇺" },
-  { name: "Pierre Gasly", wins: 1, flag: "🇫🇷" },
-  { name: "Esteban Ocon", wins: 1, flag: "🇫🇷" },
-  { name: "Nico Hulkenberg", wins: 0, flag: "🇩🇪" },
-  { name: "Kevin Magnussen", wins: 0, flag: "🇩🇰" },
-  { name: "Alexander Albon", wins: 0, flag: "🇹🇭" },
-  { name: "Yuki Tsunoda", wins: 0, flag: "🇯🇵" },
-  { name: "Lance Stroll", wins: 0, flag: "🇨🇦" }
+  { id: 1, name: 'Albon', color: '#005AFF', img: '/drivers/albon.webp', wins: 0 },
+  { id: 2, name: 'Alonso', color: '#006F62', img: '/drivers/alonso.webp', wins: 32 },
+  { id: 3, name: 'Antonelli', color: '#00D2BE', img: '/drivers/antonelli.webp', wins: 0 },
+  { id: 4, name: 'Bearman', color: '#B6BABD', img: '/drivers/bearman.webp', wins: 0 },
+  { id: 5, name: 'Bortoleto', color: '#00e701', img: '/drivers/bortoleto.webp', wins: 0 },
+  { id: 6, name: 'Bottas', color: '#B6BABD', img: '/drivers/bottas.webp', wins: 10 },
+  { id: 7, name: 'Colapinto', color: '#005AFF', img: '/drivers/colapinto.webp', wins: 0 },
+  { id: 8, name: 'Gasly', color: '#FF87BC', img: '/drivers/gasly.webp', wins: 1 },
+  { id: 9, name: 'Hadjar', color: '#6692FF', img: '/drivers/hadjar.webp', wins: 0 },
+  { id: 10, name: 'Hamilton', color: '#EF1A2D', img: '/drivers/hamilton.webp', wins: 105 },
+  { id: 11, name: 'Hulkenberg', color: '#00e701', img: '/drivers/hulkenberg.webp', wins: 0 },
+  { id: 12, name: 'Lawson', color: '#6692FF', img: '/drivers/lawson.webp', wins: 0 },
+  { id: 13, name: 'Leclerc', color: '#EF1A2D', img: '/drivers/leclerc.webp', wins: 8 },
+  { id: 14, name: 'Lindblad', color: '#101C50', img: '/drivers/lindblad.webp', wins: 0 },
+  { id: 15, name: 'Norris', color: '#FF8000', img: '/drivers/norris.webp', wins: 3 },
+  { id: 16, name: 'Ocon', color: '#B6BABD', img: '/drivers/ocon.webp', wins: 1 },
+  { id: 17, name: 'Perez', color: '#101C50', img: '/drivers/perez.webp', wins: 6 },
+  { id: 18, name: 'Piastri', color: '#FF8000', img: '/drivers/piastri.webp', wins: 2 },
+  { id: 19, name: 'Russell', color: '#00D2BE', img: '/drivers/russell.webp', wins: 2 },
+  { id: 20, name: 'Sainz', color: '#005AFF', img: '/drivers/sainz.webp', wins: 4 },
+  { id: 21, name: 'Stroll', color: '#006F62', img: '/drivers/stroll.webp', wins: 0 },
+  { id: 22, name: 'Verstappen', color: '#101C50', img: '/drivers/verstappen.webp', wins: 62 }
 ];
 
 const getRandomDriver = (excludeDriver) => {
   let driver;
   do {
     driver = f1Data[Math.floor(Math.random() * f1Data.length)];
-  } while (excludeDriver && driver.name === excludeDriver.name);
+  } while (excludeDriver && driver.id === excludeDriver.id);
   return driver;
 };
 
@@ -154,7 +144,7 @@ const F1HigherLower = () => {
       } else {
         gameOver();
       }
-    }, 1500); // 1.5 seconds to show the suspenseful reveal
+    }, 1500); 
   };
 
   // --- UI COMPONENTS ---
@@ -238,17 +228,20 @@ const F1HigherLower = () => {
             {/* LEFT CARD: Current Driver */}
             <div className="glass-panel" style={{ 
               flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-              background: 'linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(0,0,0,0.5))', border: '2px solid rgba(255,255,255,0.2)'
+              background: `linear-gradient(to bottom, ${currentDriver.color}11, rgba(0,0,0,0.6))`, 
+              border: `2px solid ${currentDriver.color}`,
+              boxShadow: `0 0 30px ${currentDriver.color}33`,
+              padding: '20px'
             }}>
-              <div style={{ fontSize: '5rem', marginBottom: '10px' }}>{currentDriver.flag}</div>
-              <h2 style={{ color: 'white', fontSize: '2rem', textAlign: 'center', margin: '0 0 20px 0' }}>{currentDriver.name}</h2>
+              <img src={currentDriver.img} alt={currentDriver.name} style={{ width: '150px', height: '150px', objectFit: 'contain', marginBottom: '15px', filter: `drop-shadow(0 0 10px ${currentDriver.color}88)` }} />
+              <h2 style={{ color: currentDriver.color, fontSize: '2.2rem', textAlign: 'center', margin: '0 0 15px 0', textShadow: `0 0 10px ${currentDriver.color}55` }}>{currentDriver.name}</h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
-              <h1 style={{ color: '#00f3ff', fontSize: '4.5rem', margin: '10px 0', textShadow: '0 0 20px rgba(0,243,255,0.5)' }}>{currentDriver.wins}</h1>
+              <h1 style={{ color: 'white', fontSize: '4.5rem', margin: '5px 0', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>{currentDriver.wins}</h1>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Race Wins</p>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#333', padding: '20px', borderRadius: '50%', color: 'white', fontWeight: '900', fontSize: '1.5rem', boxShadow: '0 0 20px rgba(0,0,0,0.8)' }}>
+              <div style={{ background: '#333', padding: '20px', borderRadius: '50%', color: 'white', fontWeight: '900', fontSize: '1.5rem', boxShadow: '0 0 20px rgba(0,0,0,0.8)', zIndex: 10 }}>
                 VS
               </div>
             </div>
@@ -256,15 +249,18 @@ const F1HigherLower = () => {
             {/* RIGHT CARD: Next Driver Guessing */}
             <div className="glass-panel" style={{ 
               flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-              background: 'linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(0,0,0,0.5))', border: `2px solid ${isGameOver ? '#ff1801' : 'rgba(255,255,255,0.2)'}`
+              background: `linear-gradient(to bottom, ${nextDriver.color}11, rgba(0,0,0,0.6))`, 
+              border: `2px solid ${isGameOver ? '#ff1801' : nextDriver.color}`,
+              boxShadow: `0 0 30px ${nextDriver.color}33`,
+              padding: '20px'
             }}>
-              <div style={{ fontSize: '5rem', marginBottom: '10px' }}>{nextDriver.flag}</div>
-              <h2 style={{ color: 'white', fontSize: '2rem', textAlign: 'center', margin: '0 0 20px 0' }}>{nextDriver.name}</h2>
+              <img src={nextDriver.img} alt={nextDriver.name} style={{ width: '150px', height: '150px', objectFit: 'contain', marginBottom: '15px', filter: `drop-shadow(0 0 10px ${nextDriver.color}88)` }} />
+              <h2 style={{ color: nextDriver.color, fontSize: '2.2rem', textAlign: 'center', margin: '0 0 15px 0', textShadow: `0 0 10px ${nextDriver.color}55` }}>{nextDriver.name}</h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
               
               {/* Guessing UI or Reveal */}
               {!revealMode && !isGameOver ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', margin: '20px 0', width: '80%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', margin: '20px 0', width: '85%' }}>
                   <button onClick={() => handleGuess('higher')} style={{ background: 'rgba(0, 175, 58, 0.2)', border: '2px solid #00af3a', color: '#00af3a', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
                     <ChevronUp size={24}/> HIGHER
                   </button>
@@ -273,7 +269,7 @@ const F1HigherLower = () => {
                   </button>
                 </div>
               ) : (
-                <h1 style={{ color: isGameOver ? '#ff1801' : '#00af3a', fontSize: '4.5rem', margin: '10px 0', textShadow: `0 0 20px ${isGameOver ? 'rgba(255,24,1,0.5)' : 'rgba(0,175,58,0.5)'}` }}>
+                <h1 style={{ color: isGameOver ? '#ff1801' : 'white', fontSize: '4.5rem', margin: '5px 0', textShadow: `0 0 20px ${isGameOver ? 'rgba(255,24,1,0.5)' : 'rgba(255,255,255,0.5)'}` }}>
                   {nextDriver.wins}
                 </h1>
               )}
@@ -291,7 +287,7 @@ const F1HigherLower = () => {
           )}
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '20px', marginTop: '40px', width: '100%', maxWidth: '700px' }}>
+          <div style={{ display: 'flex', gap: '20px', marginTop: '40px', width: '100%', maxWidth: '750px' }}>
             <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '20px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
               <ArrowLeft size={24}/> MENU
             </button>
