@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, User, Gamepad2, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
 // FIREBASE IMPORTS
@@ -8,8 +8,8 @@ import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
-const GRID_SIZE = 20;
-const INITIAL_SNAKE = [{ x: 10, y: 10 }];
+const GRID_SIZE = 25; // Increased for a larger, higher-resolution play area
+const INITIAL_SNAKE = [{ x: 12, y: 12 }];
 const INITIAL_DIRECTION = { x: 0, y: -1 }; // Moving Up
 
 const SnakeGame = () => {
@@ -103,7 +103,7 @@ const SnakeGame = () => {
 
     await updateDoc(userRef, {
       snakeMatches: increment(1),
-      ...(isNewHighScore && { snakeHighScore: score }) // Only update if it's a new high score
+      ...(isNewHighScore && { snakeHighScore: score })
     });
   };
 
@@ -142,25 +142,36 @@ const SnakeGame = () => {
       });
     };
 
-    const intervalId = setInterval(moveSnake, 120); // Snake Speed
+    const intervalId = setInterval(moveSnake, 100); // Slightly faster for the bigger grid
     return () => clearInterval(intervalId);
   }, [view, isGameOver, food, generateFood]);
+
+  // Controls Handlers
+  const handleDirChange = (x, y) => {
+    if (view !== 'game' || isGameOver) return;
+    const current = dirRef.current;
+    // Prevent snake from reversing into itself
+    if (x !== 0 && current.x === -x) return;
+    if (y !== 0 && current.y === -y) return;
+    dirRef.current = { x, y };
+  };
 
   // Keyboard Controls
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (view !== 'game' || isGameOver) return;
-      const { x, y } = dirRef.current;
-      
+      // Prevent scrolling when using arrow keys
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+      }
       switch (e.key) {
-        case 'ArrowUp': case 'w': if (y !== 1) dirRef.current = { x: 0, y: -1 }; break;
-        case 'ArrowDown': case 's': if (y !== -1) dirRef.current = { x: 0, y: 1 }; break;
-        case 'ArrowLeft': case 'a': if (x !== 1) dirRef.current = { x: -1, y: 0 }; break;
-        case 'ArrowRight': case 'd': if (x !== -1) dirRef.current = { x: 1, y: 0 }; break;
+        case 'ArrowUp': case 'w': handleDirChange(0, -1); break;
+        case 'ArrowDown': case 's': handleDirChange(0, 1); break;
+        case 'ArrowLeft': case 'a': handleDirChange(-1, 0); break;
+        case 'ArrowRight': case 'd': handleDirChange(1, 0); break;
         default: break;
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [view, isGameOver]);
 
@@ -186,12 +197,14 @@ const SnakeGame = () => {
 
   return (
     <div className="glass-panel" style={{ 
-      width: '100%', maxWidth: '450px', minHeight: '600px', 
+      width: '100%', 
+      maxWidth: '600px', // INCREASED FOR A BIGGER PLAY AREA
+      minHeight: '700px', 
       padding: '30px', margin: '40px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
     }}>
       
       {/* HEADER */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h2 style={{ 
           fontSize: '2rem', fontWeight: '800', margin: 0, 
           background: 'linear-gradient(to right, #00af3a, #00f3ff)', WebkitBackgroundClip: 'text', color: 'transparent',
@@ -238,16 +251,19 @@ const SnakeGame = () => {
 
           {/* THE BOARD */}
           <div style={{ 
-            width: '100%', maxWidth: '390px', aspectRatio: '1/1', background: 'rgba(0,0,0,0.5)', 
+            width: '100%', aspectRatio: '1/1', background: 'rgba(0,0,0,0.6)', 
             border: `2px solid ${isGameOver ? '#ff4444' : '#00af3a'}`, borderRadius: '8px', 
             position: 'relative', overflow: 'hidden', margin: '0 auto',
             boxShadow: `0 0 30px ${isGameOver ? 'rgba(255, 68, 68, 0.2)' : 'rgba(0, 175, 58, 0.1)'}`
           }}>
+            {/* Grid Overlay (Optional, gives it an arcade feel) */}
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: `${100/GRID_SIZE}% ${100/GRID_SIZE}%` }} />
+
             {/* Food */}
             <div style={{
               position: 'absolute', width: `${100 / GRID_SIZE}%`, height: `${100 / GRID_SIZE}%`,
               left: `${food.x * (100 / GRID_SIZE)}%`, top: `${food.y * (100 / GRID_SIZE)}%`,
-              background: '#ff4444', borderRadius: '50%', boxShadow: '0 0 10px #ff4444'
+              background: '#ff4444', borderRadius: '50%', boxShadow: '0 0 15px #ff4444', zIndex: 2
             }} />
             
             {/* Snake */}
@@ -256,20 +272,31 @@ const SnakeGame = () => {
                 position: 'absolute', width: `${100 / GRID_SIZE}%`, height: `${100 / GRID_SIZE}%`,
                 left: `${segment.x * (100 / GRID_SIZE)}%`, top: `${segment.y * (100 / GRID_SIZE)}%`,
                 background: index === 0 ? '#00f3ff' : '#00af3a', // Head is Cyan, body is Green
-                borderRadius: '4px', border: '1px solid rgba(0,0,0,0.3)'
+                borderRadius: index === 0 ? '6px' : '4px', border: '1px solid rgba(0,0,0,0.5)',
+                zIndex: index === 0 ? 3 : 2
               }} />
             ))}
 
             {isGameOver && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <h2 style={{ color: '#ff4444', margin: 0, fontSize: '2rem' }}>GAME OVER</h2>
-                <p style={{ color: 'white' }}>Final Score: {score}</p>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                <h2 style={{ color: '#ff4444', margin: '0 0 10px 0', fontSize: '2.5rem', textShadow: '0 0 20px rgba(255,0,0,0.5)' }}>GAME OVER</h2>
+                <p style={{ color: 'white', fontSize: '1.2rem', margin: 0 }}>Final Score: <span style={{color: '#00af3a', fontWeight: 'bold'}}>{score}</span></p>
               </div>
             )}
           </div>
 
-          {/* Controls */}
-          <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', paddingTop: '20px' }}>
+          {/* MOBILE D-PAD CONTROLS */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px', gap: '5px' }}>
+             <button onClick={() => handleDirChange(0, -1)} style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}><ChevronUp size={28}/></button>
+             <div style={{ display: 'flex', gap: '40px' }}>
+                <button onClick={() => handleDirChange(-1, 0)} style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}><ChevronLeft size={28}/></button>
+                <button onClick={() => handleDirChange(1, 0)} style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}><ChevronRight size={28}/></button>
+             </div>
+             <button onClick={() => handleDirChange(0, 1)} style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}><ChevronDown size={28}/></button>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', cursor: 'pointer' }}>MENU</button>
             <button onClick={resetGame} style={{ flex: 1, padding: '15px', background: 'rgba(0, 175, 58, 0.1)', border: '1px solid #00af3a', color: '#00af3a', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>RESTART</button>
           </div>
@@ -286,6 +313,8 @@ const SnakeGame = () => {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {isLoading ? (
                <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px', color: 'white' }}>Fetching Data...</div>
+            ) : leaderboardData.length === 0 ? (
+               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px', color: 'white' }}>No scores yet. Set the record!</div>
             ) : (
               leaderboardData.map((player, index) => (
                 <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px', marginBottom: '10px', borderRadius: '12px', background: index === 0 ? 'linear-gradient(90deg, rgba(255,215,0,0.2) 0%, rgba(255,255,255,0.05) 100%)' : 'rgba(255,255,255,0.05)', border: index === 0 ? '1px solid rgba(255,215,0,0.5)' : '1px solid rgba(255,255,255,0.05)' }}>
