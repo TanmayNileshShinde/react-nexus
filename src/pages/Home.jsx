@@ -19,7 +19,7 @@ const Home = () => {
         Code. Play. Create.
       </p>
 
-      {/* Replaced Grid with Flexbox for perfect centering */}
+      {/* Flexbox layout for perfect centering */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
         
         {/* Card 1: Tic-Tac-Toe */}
@@ -32,7 +32,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: '100%'
+            height: 'auto' /* Changed from 100% to auto */
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -53,7 +53,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: '100%'
+            height: 'auto' /* Changed from 100% to auto */
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -74,7 +74,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: '100%'
+            height: 'auto' /* Changed from 100% to auto */
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -95,7 +95,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: '100%'
+            height: 'auto' /* Changed from 100% to auto */
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -116,7 +116,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: '100%'
+            height: 'auto' /* Changed from 100% to auto */
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
