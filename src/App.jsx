@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import TicTacToe from './pages/TicTacToe';
 import MemoryGame from './pages/MemoryGame';
 import ReactionGame from './pages/ReactionGame';
-import ChessGame from './ChessGame'; 
+import ChessGame from './ChessGame.jsx'; 
 import './styles/App.css';
 
 function App() {
