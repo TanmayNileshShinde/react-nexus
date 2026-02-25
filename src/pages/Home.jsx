@@ -23,7 +23,7 @@ const Home = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
         
         {/* Row 1, Card 1: Tic-Tac-Toe */}
-        <Link to="/game" style={{ textDecoration: 'none' }}>
+        <Link to="/game" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
             border: '1px solid #00f3ff',
@@ -44,7 +44,7 @@ const Home = () => {
         </Link>
         
         {/* Row 1, Card 2: Angular Math Blitz */}
-        <a href="/math-game.html" style={{ textDecoration: 'none' }}>
+        <a href="/math-game.html" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
             border: '1px solid #bc13fe',
@@ -65,7 +65,7 @@ const Home = () => {
         </a>
         
         {/* Row 1, Card 3: F1 Memory Game */}
-        <Link to="/memory" style={{ textDecoration: 'none' }}>
+        <Link to="/memory" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
             border: '1px solid #ff4444',
@@ -86,7 +86,7 @@ const Home = () => {
         </Link>
 
         {/* Row 1, Card 4: Reaction Test */}
-        <Link to="/reaction" style={{ textDecoration: 'none' }}>
+        <Link to="/reaction" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
             border: '1px solid #00af3a',
@@ -107,7 +107,7 @@ const Home = () => {
         </Link>
 
         {/* Row 2, Card 1: The Grandmaster (Chess) */}
-        <Link to="/chess" style={{ textDecoration: 'none' }}>
+        <Link to="/chess" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
             border: '1px solid #ffd700',
