@@ -15,6 +15,7 @@ const TicTacToe = () => {
   const [view, setView] = useState('menu'); // 'menu', 'game_ai', 'game_friend', 'leaderboard'
   const [board, setBoard] = useState(Array(9).fill(null));
   const [isXNext, setIsXNext] = useState(true);
+  const [difficulty, setDifficulty] = useState('Hard'); // 'Easy' (Random) or 'Hard' (Minimax)
   
   // Stats now includes losses
   const [stats, setStats] = useState({ wins: 0, losses: 0, matches: 0, winRate: 0 });
@@ -32,7 +33,6 @@ const TicTacToe = () => {
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
 
-      // FORCE SAVE Profile Info (Initialize losses if missing)
       if (!docSnap.exists()) {
         const initialData = { 
           displayName: result.user.displayName,
@@ -43,13 +43,12 @@ const TicTacToe = () => {
         setStats(initialData);
       } else {
         const data = docSnap.data();
-        // Ensure 'losses' exists for old users
         if (data.losses === undefined) data.losses = 0;
         
         await setDoc(userRef, { 
           displayName: result.user.displayName,
           photoURL: result.user.photoURL,
-          losses: data.losses // Ensure field is saved
+          losses: data.losses 
         }, { merge: true });
         
         setStats(data);
@@ -68,7 +67,7 @@ const TicTacToe = () => {
       const querySnapshot = await getDocs(q);
       const data = querySnapshot.docs.map(doc => {
         const d = doc.data();
-        return { ...d, losses: d.losses || 0 }; // Handle missing losses field
+        return { ...d, losses: d.losses || 0 }; 
       });
       setLeaderboardData(data);
     } catch (error) {
@@ -91,21 +90,78 @@ const TicTacToe = () => {
   const winner = calculateWinner(board);
   const isDraw = !winner && board.every((square) => square !== null);
 
-  // --- 4. AI LOGIC ---
+  // --- 4. ADVANCED AI LOGIC (MINIMAX) ---
   useEffect(() => {
     if (view === 'game_ai' && !isXNext && !winner && !isDraw) {
       const timer = setTimeout(() => {
-        const emptyIndices = board.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
-        if (emptyIndices.length > 0) {
-          const randomMove = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-          makeMove(randomMove);
+        let moveIndex;
+
+        if (difficulty === 'Easy') {
+          // RANDOM AI
+          const emptyIndices = board.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+          moveIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        } else {
+          // UNBEATABLE MINIMAX AI
+          moveIndex = getBestMove(board);
         }
-      }, 300); 
+
+        if (moveIndex !== null) makeMove(moveIndex);
+      }, 500); 
       return () => clearTimeout(timer);
     }
-  }, [isXNext, view, winner, board]);
+  }, [isXNext, view, winner, board, difficulty]);
 
-  // --- 5. STATS SAVING (Updated Logic) ---
+  const getBestMove = (currentBoard) => {
+    let bestScore = -Infinity;
+    let move = null;
+    for (let i = 0; i < 9; i++) {
+      if (currentBoard[i] === null) {
+        currentBoard[i] = 'O';
+        let score = minimax(currentBoard, 0, false);
+        currentBoard[i] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+    }
+    return move;
+  };
+
+  const scores = { X: -10, O: 10, draw: 0 };
+
+  const minimax = (tempBoard, depth, isMaximizing) => {
+    const res = calculateWinner(tempBoard);
+    if (res === 'O') return 10;
+    if (res === 'X') return -10;
+    if (tempBoard.every(s => s !== null)) return 0;
+
+    if (isMaximizing) {
+      let bestScore = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (tempBoard[i] === null) {
+          tempBoard[i] = 'O';
+          let score = minimax(tempBoard, depth + 1, false);
+          tempBoard[i] = null;
+          bestScore = Math.max(score, bestScore);
+        }
+      }
+      return bestScore;
+    } else {
+      let bestScore = Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (tempBoard[i] === null) {
+          tempBoard[i] = 'X';
+          let score = minimax(tempBoard, depth + 1, true);
+          tempBoard[i] = null;
+          bestScore = Math.min(score, bestScore);
+        }
+      }
+      return bestScore;
+    }
+  };
+
+  // --- 5. STATS SAVING ---
   useEffect(() => {
     if (view === 'game_ai' && user && (winner || isDraw)) {
       updateStats(winner === 'X', isDraw);
@@ -116,13 +172,10 @@ const TicTacToe = () => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     
-    // Calculate New Values
     const newWins = isWin ? stats.wins + 1 : stats.wins;
-    // Loss only counts if it's NOT a win and NOT a draw
     const newLosses = (!isWin && !isDrawGame) ? (stats.losses || 0) + 1 : (stats.losses || 0);
     const newMatches = stats.matches + 1;
 
-    // New Formula: Win % = Wins / (Wins + Losses). Draws are ignored in the percentage.
     const totalDecisiveGames = newWins + newLosses;
     const newRate = totalDecisiveGames === 0 ? 0 : ((newWins / totalDecisiveGames) * 100).toFixed(1);
 
@@ -175,12 +228,11 @@ const TicTacToe = () => {
     </div>
   );
 
-  // --- RENDER ---
   return (
     <div className="glass-panel" style={{ 
       width: '100%', maxWidth: '450px', minHeight: '600px', 
       padding: '30px', position: 'relative', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column'
+      display: 'flex', flexDirection: 'column', margin: '40px auto'
     }}>
       
       {/* HEADER */}
@@ -197,18 +249,9 @@ const TicTacToe = () => {
       {/* VIEW: MAIN MENU */}
       {view === 'menu' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <MenuCard 
-            icon={Bot} title="Vs AI (Ranked)" subtitle="Login to climb the global ranks" 
-            color="#bc13fe" onClick={() => setView('game_ai')} 
-          />
-          <MenuCard 
-            icon={Users} title="Vs Friend" subtitle="Local multiplayer classic" 
-            color="#00f3ff" onClick={() => setView('game_friend')} 
-          />
-          <MenuCard 
-            icon={Trophy} title="Leaderboard" subtitle="See who rules the Arena" 
-            color="#ffcc00" onClick={fetchLeaderboard} 
-          />
+          <MenuCard icon={Bot} title="Vs AI (Ranked)" subtitle="Login to climb the global ranks" color="#bc13fe" onClick={() => setView('game_ai')} />
+          <MenuCard icon={Users} title="Vs Friend" subtitle="Local multiplayer classic" color="#00f3ff" onClick={() => setView('game_friend')} />
+          <MenuCard icon={Trophy} title="Leaderboard" subtitle="See who rules the Arena" color="#ffcc00" onClick={fetchLeaderboard} />
           
           <Link to="/" style={{ textAlign: 'center', marginTop: '30px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <ArrowLeft size={14}/> Back to Nexus
@@ -216,21 +259,21 @@ const TicTacToe = () => {
         </div>
       )}
 
-      {/* VIEW: GAME (AI & FRIEND) */}
+      {/* VIEW: GAME */}
       {(view === 'game_ai' || view === 'game_friend') && (
         <div className={styles.container} style={{ flex: 1 }}>
           
-          {/* Top Bar (Login/User Info) */}
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', minHeight: '40px' }}>
+          {/* Top Bar with Difficulty and User Info */}
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', minHeight: '40px' }}>
             {view === 'game_ai' && (
-              !user ? (
-                <button onClick={handleLogin} style={{ 
-                  background: 'white', color: '#0f172a', border: 'none', padding: '8px 16px', 
-                  borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
-                }}>
-                  <User size={16}/> Login with Google
-                </button>
-              ) : (
+               <div style={{ display: 'flex', gap: '5px' }}>
+               {['Easy', 'Hard'].map(l => (
+                 <button key={l} onClick={() => setDifficulty(l)} style={{ padding: '4px 12px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.2)', background: difficulty === l ? '#bc13fe' : 'transparent', color: 'white', fontSize: '0.7rem', cursor: 'pointer', transition: '0.3s' }}>{l}</button>
+               ))}
+             </div>
+            )}
+
+            {view === 'game_ai' && user && (
                 <div style={{ 
                   background: 'rgba(255, 255, 255, 0.05)', padding: '5px 15px', borderRadius: '30px', border: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex', alignItems: 'center', gap: '12px' 
@@ -238,30 +281,24 @@ const TicTacToe = () => {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>{user.displayName}</div>
                     <div style={{ fontSize: '0.7rem', color: '#ccc' }}>
-                        <span style={{color: '#00ff88'}}>{stats.wins}W</span> - <span style={{color: '#ff4444'}}>{stats.losses || 0}L</span> ({stats.winRate}%)
+                        <span style={{color: '#00ff88'}}>{stats.wins}W</span> - <span style={{color: '#ff4444'}}>{stats.losses || 0}L</span>
                     </div>
                   </div>
-                  <img 
-                    src={user.photoURL} 
-                    alt="User" 
-                    referrerPolicy="no-referrer"
-                    style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #bc13fe' }}
-                  />
+                  <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #bc13fe' }} />
                 </div>
-              )
+            )}
+            
+            {view === 'game_ai' && !user && (
+                <button onClick={handleLogin} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <User size={16}/> Login
+                </button>
             )}
           </div>
 
-          {/* Game Status */}
-          <div className={styles.status} style={{ 
-            color: winner ? '#00ff88' : isDraw ? '#ffcc00' : 'white',
-            textShadow: winner ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
-            fontSize: '1.5rem', marginBottom: '30px'
-          }}>
+          <div className={styles.status} style={{ color: winner ? '#00ff88' : isDraw ? '#ffcc00' : 'white', fontSize: '1.5rem', marginBottom: '30px' }}>
             {winner ? `WINNER: ${winner}!` : isDraw ? "DRAW!" : `TURN: ${isXNext ? 'X' : 'O'}`}
           </div>
 
-          {/* The Board */}
           <div className={styles.board} style={{ boxShadow: '0 0 50px rgba(0, 243, 255, 0.1)' }}>
             {board.map((val, idx) => (
               <div key={idx} className={`${styles.square} ${val === 'X' ? styles.x : val === 'O' ? styles.o : ''}`} onClick={() => handleUserClick(idx)}>
@@ -270,24 +307,14 @@ const TicTacToe = () => {
             ))}
           </div>
 
-          {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '15px', marginTop: '30px' }}>
-            <button 
-              className={styles.button} 
-              onClick={() => {setView('menu'); resetGame();}} 
-              style={{ flex: 1, padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}
-            >
+            <button className={styles.button} onClick={() => {setView('menu'); resetGame();}} style={{ flex: 1, background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}>
               <ArrowLeft size={18}/> MENU
             </button>
-            <button 
-              className={styles.button} 
-              onClick={resetGame} 
-              style={{ flex: 1, padding: '15px', background: 'rgba(0, 243, 255, 0.1)', border: '1px solid rgba(0, 243, 255, 0.3)' }}
-            >
+            <button className={styles.button} onClick={resetGame} style={{ flex: 1, background: 'rgba(0, 243, 255, 0.1)', border: '1px solid rgba(0, 243, 255, 0.3)' }}>
               <RefreshCw size={18}/> RESTART
             </button>
           </div>
-
         </div>
       )}
 
@@ -295,20 +322,15 @@ const TicTacToe = () => {
       {view === 'leaderboard' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-              <ArrowLeft size={24}/>
-            </button>
+             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}><ArrowLeft size={24}/></button>
             <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#ffcc00' }}>Hall of Fame</h3>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
             {isLoading ? (
-               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>
-                 <div className={styles.spinner} style={{display:'inline-block', marginBottom:'10px'}}></div>
-                 <br/>Fetching Data...
-               </div>
+               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>Fetching Data...</div>
             ) : leaderboardData.length === 0 ? (
-               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>No matches played yet. Be the first!</div>
+               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>No matches played yet.</div>
             ) : (
               leaderboardData.map((player, index) => (
                 <div key={index} style={{ 
@@ -318,29 +340,15 @@ const TicTacToe = () => {
                   border: index === 0 ? '1px solid rgba(255,215,0,0.5)' : '1px solid rgba(255,255,255,0.05)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ 
-                      width: '30px', height: '30px', borderRadius: '50%', background: index === 0 ? '#ffd700' : 'rgba(255,255,255,0.1)', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: index === 0 ? 'black' : 'white'
-                    }}>
-                      {index + 1}
-                    </div>
-                    {player.photoURL && (
-                      <img 
-                        src={player.photoURL} 
-                        alt="Player" 
-                        referrerPolicy="no-referrer"
-                        style={{ width: 40, height: 40, borderRadius: '50%' }} 
-                      />
-                    )}
+                    <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: index === 0 ? '#ffd700' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: index === 0 ? 'black' : 'white' }}>{index + 1}</div>
+                    <img src={player.photoURL} alt="Player" style={{ width: 40, height: 40, borderRadius: '50%' }} />
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{player.displayName || "Unknown"}</div>
                       <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>{player.matches} Played</div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#00f3ff', fontWeight: 'bold', fontSize: '1.0rem' }}>
-                        {player.wins}W <span style={{color:'rgba(255,255,255,0.3)'}}>|</span> <span style={{color:'#ff4444'}}>{player.losses || 0}L</span>
-                    </div>
+                    <div style={{ color: '#00f3ff', fontWeight: 'bold' }}>{player.wins}W - {player.losses}L</div>
                     <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>{player.winRate}% Rate</div>
                   </div>
                 </div>
@@ -349,7 +357,6 @@ const TicTacToe = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
