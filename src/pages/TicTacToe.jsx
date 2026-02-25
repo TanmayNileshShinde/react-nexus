@@ -211,7 +211,7 @@ const TicTacToe = () => {
           />
           
           <Link to="/" style={{ textAlign: 'center', marginTop: '30px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <ArrowLeft size={14}/> Back to Portfolio
+            <ArrowLeft size={14}/> Back to Nexus
           </Link>
         </div>
       )}
