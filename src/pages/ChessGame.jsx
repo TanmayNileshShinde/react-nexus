@@ -10,7 +10,7 @@ import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
-const ChessArena = () => {
+const ChessGame = () => {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); // 'menu', 'game_ai', 'game_friend', 'leaderboard'
   const [game, setGame] = useState(new Chess());
