@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2, FileText, Zap, LayoutGrid, Crown, Activity, Keyboard, Flag } from 'lucide-react';
+import { Gamepad2, FileText, Zap, LayoutGrid, Crown, Activity, Keyboard, Flag, Grid } from 'lucide-react';
 
 const Home = () => {
   // Shared wrapper style: Locks the width and height of the invisible link container
@@ -106,15 +106,15 @@ const Home = () => {
           </div>
         </Link>
 
-        {/* Card 5: Nexus Chess */}
-        <Link to="/chess" style={cardWrapperStyle}>
-          <div className="glass-panel" style={cardInnerStyle('#ffd700')}
+        {/* Card 5: Neon 2048 */}
+        <Link to="/2048" style={cardWrapperStyle}>
+          <div className="glass-panel" style={cardInnerStyle('#bc13fe')}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Crown size={28} color="#ffd700" />
-            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Nexus Chess</h4>
-            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Vs Bot & PvP</p>
+            <Grid size={28} color="#bc13fe" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Neon 2048</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Classic Puzzle</p>
           </div>
         </Link>
 
