@@ -22,7 +22,7 @@ const ChessGame = () => {
   
   const engine = useRef(null);
 
-  // --- AI SETUP ---
+  // --- 1. STOCKFISH AI SETUP ---
   useEffect(() => {
     engine.current = new Worker('/stockfish.js');
     engine.current.onmessage = (e) => {
@@ -34,42 +34,84 @@ const ChessGame = () => {
     return () => engine.current.terminate();
   }, []);
 
-  // --- AUTH & DATA SYNC ---
+  // --- 2. AUTH & DATA SYNC ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
+      
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) setStats(docSnap.data());
-    } catch (error) { console.error("Login failed", error); }
+
+      if (!docSnap.exists()) {
+        const initialData = { 
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+          chessWins: 0, chessLosses: 0, chessMatches: 0 
+        };
+        await setDoc(userRef, initialData);
+        setStats(initialData);
+      } else {
+        const data = docSnap.data();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error("Login failed", error);
+    }
   };
 
+  // --- 3. LEADERBOARD FETCHER ---
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
     try {
       const q = query(collection(db, "users"), orderBy("chessWins", "desc"), limit(10));
-      const snap = await getDocs(q);
-      setLeaderboardData(snap.docs.map(d => d.data()));
-    } finally { setIsLoading(false); }
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => doc.data());
+      setLeaderboardData(data);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // --- GAME LOGIC ---
+  // --- 4. GAME LOGIC ---
   const makeMove = (move) => {
     try {
       const gameCopy = new Chess(game.fen());
       const result = gameCopy.move(move);
       if (result) {
         setGame(gameCopy);
+        
+        // Ranked Stat Check
         if (gameCopy.isGameOver() && view === 'game_ai' && user) {
           const won = gameCopy.isCheckmate() && gameCopy.turn() === 'b'; 
-          updateFirebaseStats(won);
+          const isDraw = gameCopy.isDraw();
+          if (!isDraw) updateStats(won);
         }
         return result;
       }
     } catch (e) { return null; }
     return null;
+  };
+
+  const updateStats = async (isWin) => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    
+    setStats(prev => ({
+      ...prev,
+      chessWins: isWin ? prev.chessWins + 1 : prev.chessWins,
+      chessLosses: !isWin ? prev.chessLosses + 1 : prev.chessLosses,
+      chessMatches: prev.chessMatches + 1
+    }));
+
+    await updateDoc(userRef, {
+      chessMatches: increment(1),
+      chessWins: isWin ? increment(1) : increment(0),
+      chessLosses: !isWin ? increment(1) : increment(0)
+    });
   };
 
   const onDrop = (source, target) => {
@@ -86,16 +128,7 @@ const ChessGame = () => {
     return true;
   };
 
-  const updateFirebaseStats = async (isWin) => {
-    const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, {
-      chessMatches: increment(1),
-      chessWins: isWin ? increment(1) : increment(0),
-      chessLosses: !isWin ? increment(1) : increment(0)
-    });
-  };
-
-  // --- UI COMPONENTS (CLONED FROM PAGE 1) ---
+  // --- UI COMPONENTS ---
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '25px', 
@@ -110,8 +143,8 @@ const ChessGame = () => {
         <Icon size={32} color={color}/>
       </div>
       <div style={{ textAlign: 'left' }}>
-        <h3 style={{ margin: '0 0 5px 0', fontSize: '1.2rem', fontWeight: '700', letterSpacing: '0.5px', color: 'white' }}>{title}</h3>
-        <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.6, fontWeight: '400', color: 'white' }}>{subtitle}</p>
+        <h3 style={{ margin: '0 0 5px 0', fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>{title}</h3>
+        <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.6, color: 'white' }}>{subtitle}</p>
       </div>
     </div>
   );
@@ -120,7 +153,7 @@ const ChessGame = () => {
     <div className="glass-panel" style={{ 
       width: '100%', maxWidth: '450px', minHeight: '600px', 
       padding: '30px', position: 'relative', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', margin: '0 auto'
+      display: 'flex', flexDirection: 'column', margin: '40px auto'
     }}>
       
       {/* HEADER */}
@@ -134,50 +167,29 @@ const ChessGame = () => {
         </h2>
       </div>
 
-      {/* VIEW: MAIN MENU */}
+      {/* VIEW: MENU */}
       {view === 'menu' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <MenuCard 
-            icon={Bot} title="Vs AI (Ranked)" subtitle="Login to climb the global ranks" 
-            color="#ffd700" onClick={() => setView('game_ai')} 
-          />
-          <MenuCard 
-            icon={Users} title="Vs Friend" subtitle="Local multiplayer classic" 
-            color="#00f3ff" onClick={() => setView('game_friend')} 
-          />
-          <MenuCard 
-            icon={Trophy} title="Leaderboard" subtitle="See who rules the Arena" 
-            color="#bc13fe" onClick={fetchLeaderboard} 
-          />
-          
+          <MenuCard icon={Bot} title="Vs AI (Ranked)" subtitle="Climb the global ranks" color="#ffd700" onClick={() => setView('game_ai')} />
+          <MenuCard icon={Users} title="Vs Friend" subtitle="Local multiplayer classic" color="#00f3ff" onClick={() => setView('game_friend')} />
+          <MenuCard icon={Trophy} title="Leaderboard" subtitle="See who rules the Arena" color="#bc13fe" onClick={fetchLeaderboard} />
           <Link to="/" style={{ textAlign: 'center', marginTop: '30px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <ArrowLeft size={14}/> Back to Nexus
           </Link>
         </div>
       )}
 
-      {/* VIEW: GAME (AI & FRIEND) */}
+      {/* VIEW: GAME */}
       {(view === 'game_ai' || view === 'game_friend') && (
         <div className={styles.container} style={{ flex: 1 }}>
-          
           <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', minHeight: '40px' }}>
             {!user ? (
-              <button onClick={handleLogin} style={{ 
-                background: 'white', color: '#0f172a', border: 'none', padding: '8px 16px', 
-                borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer'
-              }}>
-                Login with Google
-              </button>
+              <button onClick={handleLogin} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer' }}>Login with Google</button>
             ) : (
-              <div style={{ 
-                background: 'rgba(255, 255, 255, 0.05)', padding: '5px 15px', borderRadius: '30px', border: '1px solid rgba(255, 255, 255, 0.1)',
-                display: 'flex', alignItems: 'center', gap: '12px' 
-              }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '5px 15px', borderRadius: '30px', border: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>{user.displayName}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#ffd700' }}>
-                      <span>{stats.chessWins || 0}W</span> - <span>{stats.chessLosses || 0}L</span>
-                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#ffd700' }}>{stats.chessWins || 0}W - {stats.chessLosses || 0}L</div>
                 </div>
                 <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #ffd700' }} />
               </div>
@@ -189,20 +201,37 @@ const ChessGame = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '15px', marginTop: 'auto' }}>
-            <button 
-              className={styles.button} 
-              onClick={() => {setView('menu'); setGame(new Chess());}} 
-              style={{ flex: 1, padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}
-            >
-              <ArrowLeft size={18}/> MENU
-            </button>
-            <button 
-              className={styles.button} 
-              onClick={() => setGame(new Chess())} 
-              style={{ flex: 1, padding: '15px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', color: '#ffd700' }}
-            >
-              <RefreshCw size={18}/> RESTART
-            </button>
+            <button className={styles.button} onClick={() => {setView('menu'); setGame(new Chess());}} style={{ flex: 1, padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}><ArrowLeft size={18}/> MENU</button>
+            <button className={styles.button} onClick={() => setGame(new Chess())} style={{ flex: 1, padding: '15px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', color: '#ffd700' }}><RefreshCw size={18}/> RESTART</button>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW: LEADERBOARD (Cloned from Page 1) */}
+      {view === 'leaderboard' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}><ArrowLeft size={24}/></button>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#ffcc00' }}>Hall of Fame</h3>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {isLoading ? (
+               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px' }}>Fetching Data...</div>
+            ) : (
+              leaderboardData.map((player, index) => (
+                <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px', marginBottom: '10px', borderRadius: '12px', background: index === 0 ? 'linear-gradient(90deg, rgba(255,215,0,0.2) 0%, rgba(255,255,255,0.05) 100%)' : 'rgba(255,255,255,0.05)', border: index === 0 ? '1px solid rgba(255,215,0,0.5)' : '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: index === 0 ? '#ffd700' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: index === 0 ? 'black' : 'white' }}>{index + 1}</div>
+                    <img src={player.photoURL} alt="Player" referrerPolicy="no-referrer" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+                    <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'white' }}>{player.displayName || "Unknown"}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#ffd700', fontWeight: 'bold' }}>{player.chessWins || 0}W</div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.5, color: 'white' }}>{player.chessMatches || 0} Games</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
