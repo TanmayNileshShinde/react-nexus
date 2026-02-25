@@ -20,7 +20,7 @@ const Home = () => {
       </p>
 
       {/* Strict 4-column layout with forced row spacing */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '60px', columnGap: '15px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '45px', columnGap: '15px' }}>
         
         {/* Row 1, Card 1: Tic-Tac-Toe */}
         <Link to="/game" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
