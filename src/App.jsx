@@ -6,6 +6,7 @@ import MemoryGame from './pages/MemoryGame';
 import ReactionGame from './pages/ReactionGame';
 import ChessGame from './pages/ChessGame'; 
 import SnakeGame from './pages/SnakeGame';
+import F1HigherLower from './pages/F1HigherLower';
 import './styles/App.css';
 
 function App() {

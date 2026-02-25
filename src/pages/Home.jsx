@@ -130,6 +130,18 @@ const Home = () => {
           </div>
         </Link>
         
+        {/* Card 8: F1 Higher/Lower */}
+        <Link to="/f1" style={cardWrapperStyle}>
+          <div className="glass-panel" style={cardInnerStyle('#ff1801')}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Flag size={28} color="#ff1801" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>F1 Trivia</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Higher / Lower</p>
+          </div>
+        </Link>
+        
       </div>
     </div>
   );
