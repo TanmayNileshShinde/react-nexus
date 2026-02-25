@@ -27,46 +27,32 @@ const getTileStyle = (val) => {
 };
 
 const Neon2048 = () => {
-  // --- STATES ---
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
   const [stats, setStats] = useState({ neon2048HighScore: 0, neon2048Matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Game States
   const [board, setBoard] = useState(Array(4).fill().map(() => Array(4).fill(0)));
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // --- 1. AUTH & DATA SYNC ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
-      
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
-
       if (!docSnap.exists()) {
-        const initialData = { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          neon2048HighScore: 0, neon2048Matches: 0 
-        };
+        const initialData = { displayName: result.user.displayName, photoURL: result.user.photoURL, neon2048HighScore: 0, neon2048Matches: 0 };
         await setDoc(userRef, initialData);
         setStats(initialData);
       } else {
         const data = docSnap.data();
-        setStats({
-          neon2048HighScore: data.neon2048HighScore || 0,
-          neon2048Matches: data.neon2048Matches || 0
-        });
+        setStats({ neon2048HighScore: data.neon2048HighScore || 0, neon2048Matches: data.neon2048Matches || 0 });
       }
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- 2. LEADERBOARD FETCHER ---
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -78,13 +64,10 @@ const Neon2048 = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- 3. 2048 ENGINE ---
   const getEmptyCoordinates = (currentBoard) => {
     let emptyCoords = [];
     for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) {
-        if (currentBoard[r][c] === 0) emptyCoords.push({ r, c });
-      }
+      for (let c = 0; c < 4; c++) { if (currentBoard[r][c] === 0) emptyCoords.push({ r, c }); }
     }
     return emptyCoords;
   };
@@ -123,24 +106,19 @@ const Neon2048 = () => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     const isNewHighScore = finalScore > stats.neon2048HighScore;
-    
     setStats(prev => ({ ...prev, neon2048HighScore: isNewHighScore ? finalScore : prev.neon2048HighScore, neon2048Matches: prev.neon2048Matches + 1 }));
     await updateDoc(userRef, { neon2048Matches: increment(1), ...(isNewHighScore && { neon2048HighScore: finalScore }) });
   };
 
-  // Matrix Math for sliding tiles
   const move = useCallback((direction) => {
     if (isGameOver || view !== 'game') return;
-
     let newBoard = board.map(row => [...row]);
     let pointsEarned = 0;
     let changed = false;
 
     const slide = (row) => {
       let arr = row.filter(val => val);
-      let missing = 4 - arr.length;
-      let zeros = Array(missing).fill(0);
-      return arr.concat(zeros);
+      return arr.concat(Array(4 - arr.length).fill(0));
     };
 
     const combine = (row) => {
@@ -154,12 +132,7 @@ const Neon2048 = () => {
       return row;
     };
 
-    const operate = (row) => {
-      row = slide(row);
-      row = combine(row);
-      row = slide(row);
-      return row;
-    };
+    const operate = (row) => slide(combine(slide(row)));
 
     if (direction === 'LEFT') {
       for (let i = 0; i < 4; i++) {
@@ -199,12 +172,9 @@ const Neon2048 = () => {
     }
   }, [board, isGameOver, view, score]);
 
-  // Key listeners
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(e.key)) {
-        e.preventDefault();
-      }
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(e.key)) e.preventDefault();
       switch (e.key) {
         case 'ArrowUp': case 'w': move('UP'); break;
         case 'ArrowDown': case 's': move('DOWN'); break;
@@ -217,19 +187,13 @@ const Neon2048 = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [move]);
 
-  // --- UI COMPONENTS ---
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '30px', 
       border: `1px solid ${color}`, background: `linear-gradient(145deg, rgba(255,255,255,0.03) 0%, ${color}10 100%)`,
-      transition: 'all 0.3s ease', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)', marginBottom: '20px'
-    }}
-    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = `0 10px 40px ${color}30`; }}
-    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 30px rgba(0, 0, 0, 0.1)'; }}
-    >
-      <div style={{ background: `${color}20`, padding: '20px', borderRadius: '12px' }}>
-        <Icon size={40} color={color}/>
-      </div>
+      transition: 'all 0.3s ease', marginBottom: '20px'
+    }}>
+      <div style={{ background: `${color}20`, padding: '20px', borderRadius: '12px' }}><Icon size={40} color={color}/></div>
       <div style={{ textAlign: 'left' }}>
         <h3 style={{ margin: '0 0 5px 0', fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>{title}</h3>
         <p style={{ margin: 0, fontSize: '1rem', opacity: 0.6, color: 'white' }}>{subtitle}</p>
@@ -243,39 +207,25 @@ const Neon2048 = () => {
       padding: '40px', margin: '40px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
     }}>
       
-      {/* HEADER */}
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h2 style={{ 
-          fontSize: '3rem', fontWeight: '800', margin: 0, 
-          background: 'linear-gradient(to right, #00f3ff, #bc13fe)', WebkitBackgroundClip: 'text', color: 'transparent',
-          textTransform: 'uppercase', letterSpacing: '4px'
-        }}>
-          Neon 2048
-        </h2>
+        <h2 style={{ fontSize: '3rem', fontWeight: '800', margin: 0, background: 'linear-gradient(to right, #00f3ff, #bc13fe)', WebkitBackgroundClip: 'text', color: 'transparent', textTransform: 'uppercase', letterSpacing: '4px' }}>Neon 2048</h2>
       </div>
 
-      {/* MENU VIEW */}
       {view === 'menu' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '500px', margin: '0 auto', width: '100%' }}>
           <MenuCard icon={Grid} title="Start Protocol" subtitle="Classic 2048 Rules" color="#00f3ff" onClick={() => { setView('game'); resetGame(); }} />
           <MenuCard icon={Trophy} title="Hall of Fame" subtitle="Top High Scores" color="#bc13fe" onClick={fetchLeaderboard} />
-          
           <Link to="/" style={{ textAlign: 'center', marginTop: '40px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <ArrowLeft size={16}/> Back to Nexus
           </Link>
         </div>
       )}
 
-      {/* GAME VIEW */}
       {view === 'game' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
-          {/* Top Bar (Score & User) */}
-          <div style={{ width: '100%', maxWidth: '500px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#00f3ff', textShadow: '0 0 15px rgba(0, 243, 255, 0.5)' }}>
-              SCORE: {score}
-            </div>
-            
+          <div style={{ width: '100%', maxWidth: '500px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#00f3ff', textShadow: '0 0 15px rgba(0, 243, 255, 0.5)' }}>SCORE: {score}</div>
             {!user ? (
               <button onClick={handleLogin} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '10px 20px', borderRadius: '25px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}>Login to Save</button>
             ) : (
@@ -289,64 +239,49 @@ const Neon2048 = () => {
             )}
           </div>
 
-          {/* THE 2048 BOARD */}
           <div style={{ 
             width: '100%', maxWidth: '500px', aspectRatio: '1/1', background: 'rgba(0,0,0,0.5)', 
             border: `2px solid ${isGameOver ? '#ff4444' : '#00f3ff'}`, borderRadius: '12px', 
-            padding: '15px', position: 'relative', display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '10px',
+            padding: '15px', position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '10px',
             boxShadow: `0 0 30px ${isGameOver ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 243, 255, 0.2)'}`
           }}>
-            {board.map((row, r) => (
-              row.map((cell, c) => {
-                const style = getTileStyle(cell);
-                return (
-                  <div key={`${r}-${c}`} style={{
-                    background: style.bg,
-                    borderRadius: '8px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: cell > 512 ? '2rem' : '2.5rem', fontWeight: '900', color: style.color,
-                    boxShadow: style.shadow,
-                    border: cell > 0 ? `1px solid ${style.color}55` : '1px solid rgba(255,255,255,0.05)',
-                    transition: 'all 0.15s ease-in-out'
-                  }}>
-                    {cell > 0 ? cell : ''}
-                  </div>
-                );
-              })
-            ))}
-
+            {board.map((row, r) => row.map((cell, c) => {
+              const style = getTileStyle(cell);
+              return (
+                <div key={`${r}-${c}`} style={{ background: style.bg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cell > 512 ? '2rem' : '2.5rem', fontWeight: '900', color: style.color, boxShadow: style.shadow, border: cell > 0 ? `1px solid ${style.color}55` : '1px solid rgba(255,255,255,0.05)', transition: 'all 0.15s ease-in-out' }}>
+                  {cell > 0 ? cell : ''}
+                </div>
+              );
+            }))}
             {isGameOver && (
               <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '12px' }}>
-                <h2 style={{ color: '#ff4444', margin: '0 0 15px 0', fontSize: '3.5rem', textShadow: '0 0 30px rgba(255,0,0,0.6)' }}>GRID LOCKED</h2>
+                <h2 style={{ color: '#ff4444', margin: '0 0 15px 0', fontSize: '3.5rem', textShadow: '0 0 30px rgba(255, 68, 68, 0.6)' }}>GRID LOCKED</h2>
                 <p style={{ color: 'white', fontSize: '1.5rem', margin: 0 }}>Final Score: <span style={{color: '#00f3ff', fontWeight: 'bold'}}>{score}</span></p>
               </div>
             )}
           </div>
 
-          {/* D-PAD CONTROLS FOR MOBILE (Or Mouse clicking) */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '30px', gap: '5px' }}>
-             <button onClick={() => move('UP')} style={{ padding: '15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '12px', cursor: 'pointer', color: '#00f3ff' }}><ChevronUp size={32}/></button>
-             <div style={{ display: 'flex', gap: '60px' }}>
-                <button onClick={() => move('LEFT')} style={{ padding: '15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '12px', cursor: 'pointer', color: '#00f3ff' }}><ChevronLeft size={32}/></button>
-                <button onClick={() => move('RIGHT')} style={{ padding: '15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '12px', cursor: 'pointer', color: '#00f3ff' }}><ChevronRight size={32}/></button>
+          {/* COMPACT D-PAD CONTROLS */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px' }}>
+             <button onClick={() => move('UP')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronUp size={24}/></button>
+             <div style={{ display: 'flex', gap: '40px', margin: '5px 0' }}>
+                <button onClick={() => move('LEFT')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronLeft size={24}/></button>
+                <button onClick={() => move('RIGHT')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronRight size={24}/></button>
              </div>
-             <button onClick={() => move('DOWN')} style={{ padding: '15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '12px', cursor: 'pointer', color: '#00f3ff' }}><ChevronDown size={32}/></button>
+             <button onClick={() => move('DOWN')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronDown size={24}/></button>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '20px', marginTop: '30px', width: '100%', maxWidth: '500px' }}>
-            <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '20px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '20px', marginTop: '20px', width: '100%', maxWidth: '500px' }}>
+            <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '15px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
               <ArrowLeft size={24}/> MENU
             </button>
-            <button onClick={resetGame} style={{ flex: 1, padding: '20px', background: 'rgba(0, 243, 255, 0.1)', border: '2px solid #00f3ff', color: '#00f3ff', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+            <button onClick={resetGame} style={{ flex: 1, padding: '15px', background: 'rgba(0, 243, 255, 0.1)', border: '2px solid #00f3ff', color: '#00f3ff', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
               <RefreshCw size={24}/> RESTART
             </button>
           </div>
         </div>
       )}
 
-      {/* LEADERBOARD VIEW */}
       {view === 'leaderboard' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
@@ -354,15 +289,11 @@ const Neon2048 = () => {
             <h3 style={{ margin: 0, fontSize: '2rem', color: '#bc13fe' }}>Hall of Fame</h3>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '10px' }}>
-            {isLoading ? (
-               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px', color: 'white', fontSize: '1.2rem' }}>Fetching Grid Data...</div>
-            ) : leaderboardData.length === 0 ? (
-               <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px', color: 'white', fontSize: '1.2rem' }}>No scores yet. Initialize the grid!</div>
-            ) : (
+            {isLoading ? ( <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px', color: 'white', fontSize: '1.2rem' }}>Fetching Grid Data...</div> ) : (
               leaderboardData.map((player, index) => (
                 <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', marginBottom: '15px', borderRadius: '16px', background: index === 0 ? 'linear-gradient(90deg, rgba(188,19,254,0.2) 0%, rgba(255,255,255,0.05) 100%)' : 'rgba(255,255,255,0.05)', border: index === 0 ? '2px solid rgba(188,19,254,0.5)' : '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: index === 0 ? '#bc13fe' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: index === 0 ? 'white' : 'white', fontSize: '1.2rem' }}>{index + 1}</div>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: index === 0 ? '#bc13fe' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white', fontSize: '1.2rem' }}>{index + 1}</div>
                     <img src={player.photoURL} alt="Player" referrerPolicy="no-referrer" style={{ width: 50, height: 50, borderRadius: '50%' }} />
                     <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'white' }}>{player.displayName || "Unknown"}</div>
                   </div>
