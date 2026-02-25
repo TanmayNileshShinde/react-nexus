@@ -19,8 +19,8 @@ const Home = () => {
         Code. Play. Create.
       </p>
 
-      {/* Strict 4-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+      {/* Strict 4-column layout with forced row spacing */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '30px', columnGap: '15px' }}>
         
         {/* Row 1, Card 1: Tic-Tac-Toe */}
         <Link to="/game" style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
