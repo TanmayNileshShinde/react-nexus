@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2, FileText, Zap, LayoutGrid } from 'lucide-react';
+import { Gamepad2, FileText, Zap, LayoutGrid, Crown } from 'lucide-react';
 
 const Home = () => {
   return (
-    <div className="glass-panel" style={{ width: '100%', maxWidth: '600px' }}>
+    <div className="glass-panel" style={{ width: '100%', maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
       <h1 style={{ 
         fontSize: '2.5rem', 
         background: 'linear-gradient(to right, #00f3ff, #bc13fe)', 
@@ -19,7 +19,8 @@ const Home = () => {
         Code. Play. Create.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+      {/* The new responsive 4-column grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '15px' }}>
         
         {/* Card 1: Tic-Tac-Toe */}
         <Link to="/game" style={{ textDecoration: 'none' }}>
@@ -30,7 +31,8 @@ const Home = () => {
             flexDirection: 'column',
             alignItems: 'center',
             cursor: 'pointer',
-            transition: 'transform 0.2s'
+            transition: 'transform 0.2s',
+            height: '100%'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -50,7 +52,8 @@ const Home = () => {
             flexDirection: 'column',
             alignItems: 'center',
             cursor: 'pointer',
-            transition: 'transform 0.2s'
+            transition: 'transform 0.2s',
+            height: '100%'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -65,12 +68,13 @@ const Home = () => {
         <Link to="/memory" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
+            border: '1px solid #ff4444',
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            border: '1px solid #ff4444'
+            height: '100%'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -90,7 +94,8 @@ const Home = () => {
             flexDirection: 'column',
             alignItems: 'center',
             cursor: 'pointer',
-            transition: 'transform 0.2s'
+            transition: 'transform 0.2s',
+            height: '100%'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -100,6 +105,28 @@ const Home = () => {
             <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Test Your Reactions</p>
           </div>
         </Link>
+
+        {/* Card 5: The Grandmaster (Chess) */}
+        <Link to="/chess" style={{ textDecoration: 'none' }}>
+          <div className="glass-panel" style={{ 
+            padding: '20px', 
+            border: '1px solid #ffd700',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.2s',
+            height: '100%'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Crown size={32} color="#ffd700" />
+            <h4 style={{ margin: '10px 0 0 0', color: 'white' }}>Nexus Chess</h4>
+            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Vs Bot & PvP</p>
+          </div>
+        </Link>
+        
       </div>
     </div>
   );
