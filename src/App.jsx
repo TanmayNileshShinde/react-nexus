@@ -19,6 +19,7 @@ function App() {
         <Route path="/reaction" element={<ReactionGame />} />
         <Route path="/chess" element={<ChessGame />} />
         <Route path="/snake" element={<SnakeGame />} />
+        <Route path="/f1" element={<F1HigherLower />} />
       </Routes>
     </Router>
   );
