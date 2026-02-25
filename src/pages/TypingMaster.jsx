@@ -9,13 +9,31 @@ import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 const codeSnippets = [
+  // --- REACT & JSX ---
   "const [user, setUser] = useState(null);",
-  "import { doc, getDoc } from 'firebase/firestore';",
-  "const newBoard = [...board];\nnewBoard[index] = isXNext ? 'X' : 'O';",
-  "function calculateWinner(squares) {\n  const lines = [[0,1,2],[3,4,5]];\n}",
-  "const handleLogin = async () => {\n  const result = await signInWithPopup(auth, provider);\n};",
   "useEffect(() => {\n  console.log('Component mounted');\n}, []);",
-  "<div className=\"glass-panel\" style={{ display: 'flex' }}>\n  <h1>React Nexus</h1>\n</div>"
+  "<div className=\"glass-panel\">\n  <h1>React Nexus</h1>\n</div>",
+  "const newBoard = [...board];\nnewBoard[index] = isXNext ? 'X' : 'O';",
+
+  // --- PYTHON ---
+  "def calculate_score(points, bonus):\n    return points + (bonus * 2)",
+  "import pandas as pd\ndf = pd.read_csv('data.csv')\nprint(df.head())",
+  "for i in range(10):\n    print(f'Processing item {i}')",
+  "with open('config.json', 'r') as file:\n    data = json.load(file)",
+
+  // --- ANGULAR (TypeScript) ---
+  "@Component({\n  selector: 'app-root',\n  templateUrl: './app.component.html'\n})\nexport class AppComponent {}",
+  "ngOnInit(): void {\n  this.dataService.fetchData().subscribe();\n}",
+  "import { Injectable } from '@angular/core';\n@Injectable({ providedIn: 'root' })",
+
+  // --- ANGULARJS (Legacy 1.x) ---
+  "app.controller('MainCtrl', function($scope) {\n  $scope.greeting = 'Hello World';\n});",
+  "angular.module('myApp', []).directive('myDirective', function() {});",
+  "$http.get('/api/data').then(function(response) {\n  $scope.data = response.data;\n});",
+
+  // --- NODE.JS / EXPRESS ---
+  "app.get('/api/users', (req, res) => {\n  res.json({ status: 'success' });\n});",
+  "mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });"
 ];
 
 const TypingMaster = () => {
