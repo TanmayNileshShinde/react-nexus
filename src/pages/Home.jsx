@@ -113,7 +113,17 @@ const Home = () => {
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Vs Bot & PvP</p>
           </div>
         </Link>
-        
+        {/* Card 6: Snake Arena */}
+        <Link to="/snake" style={cardWrapperStyle}>
+          <div className="glass-panel" style={cardInnerStyle('#00ff88')}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Activity size={28} color="#00ff88" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Snake Arena</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Classic Survival</p>
+          </div>
+        </Link>
       </div>
     </div>
   );

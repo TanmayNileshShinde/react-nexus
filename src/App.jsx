@@ -5,6 +5,7 @@ import TicTacToe from './pages/TicTacToe';
 import MemoryGame from './pages/MemoryGame';
 import ReactionGame from './pages/ReactionGame';
 import ChessGame from './pages/ChessGame'; 
+import SnakeGame from './pages/SnakeGame';
 import './styles/App.css';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/memory" element={<MemoryGame />} />
         <Route path="/reaction" element={<ReactionGame />} />
         <Route path="/chess" element={<ChessGame />} />
+        <Route path="/snake" element={<SnakeGame />} />
       </Routes>
     </Router>
   );
