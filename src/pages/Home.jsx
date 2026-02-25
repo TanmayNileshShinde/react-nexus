@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2, FileText, Zap, LayoutGrid, Crown, Activity } from 'lucide-react';
+import { Gamepad2, FileText, Zap, LayoutGrid, Crown, Activity, Keyboard, Flag } from 'lucide-react';
 
 const Home = () => {
   // Shared wrapper style: Locks the width and height of the invisible link container
@@ -127,6 +127,18 @@ const Home = () => {
             <Activity size={28} color="#00ff88" />
             <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Snake Arena</h4>
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Classic Survival</p>
+          </div>
+        </Link>
+
+        {/* Card 7: Terminal Typer */}
+        <Link to="/type" style={cardWrapperStyle}>
+          <div className="glass-panel" style={cardInnerStyle('#00b8ff')}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Keyboard size={28} color="#00b8ff" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Terminal Typer</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Code Speed Test</p>
           </div>
         </Link>
         
