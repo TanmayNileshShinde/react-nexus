@@ -19,10 +19,10 @@ const Home = () => {
         Code. Play. Create.
       </p>
 
-      {/* The new responsive 4-column grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '15px' }}>
+      {/* Strict 4-column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
         
-        {/* Card 1: Tic-Tac-Toe */}
+        {/* Row 1, Card 1: Tic-Tac-Toe */}
         <Link to="/game" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
@@ -43,7 +43,7 @@ const Home = () => {
           </div>
         </Link>
         
-        {/* Card 2: Angular Math Blitz */}
+        {/* Row 1, Card 2: Angular Math Blitz */}
         <a href="/math-game.html" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
@@ -64,7 +64,7 @@ const Home = () => {
           </div>
         </a>
         
-        {/* Card 3: F1 Memory Game */}
+        {/* Row 1, Card 3: F1 Memory Game */}
         <Link to="/memory" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
@@ -85,7 +85,7 @@ const Home = () => {
           </div>
         </Link>
 
-        {/* Card 4: Reaction Test */}
+        {/* Row 1, Card 4: Reaction Test */}
         <Link to="/reaction" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
@@ -106,7 +106,7 @@ const Home = () => {
           </div>
         </Link>
 
-        {/* Card 5: The Grandmaster (Chess) */}
+        {/* Row 2, Card 1: The Grandmaster (Chess) */}
         <Link to="/chess" style={{ textDecoration: 'none' }}>
           <div className="glass-panel" style={{ 
             padding: '20px', 
