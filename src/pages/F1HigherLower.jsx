@@ -7,30 +7,30 @@ import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
-// --- F1 DRIVER DATABASE (IMAGES & WINS) ---
+// --- F1 DRIVER DATABASE (UPDATED TO PODIUMS FOR 2026) ---
 const f1Data = [
-  { id: 1, name: 'Albon', color: '#005AFF', img: '/drivers/albon.webp', wins: 0 },
-  { id: 2, name: 'Alonso', color: '#006F62', img: '/drivers/alonso.webp', wins: 32 },
-  { id: 3, name: 'Antonelli', color: '#00D2BE', img: '/drivers/antonelli.webp', wins: 0 },
-  { id: 4, name: 'Bearman', color: '#B6BABD', img: '/drivers/bearman.webp', wins: 0 },
-  { id: 5, name: 'Bortoleto', color: '#00e701', img: '/drivers/bortoleto.webp', wins: 0 },
-  { id: 6, name: 'Bottas', color: '#B6BABD', img: '/drivers/bottas.webp', wins: 10 },
-  { id: 7, name: 'Colapinto', color: '#005AFF', img: '/drivers/colapinto.webp', wins: 0 },
-  { id: 8, name: 'Gasly', color: '#FF87BC', img: '/drivers/gasly.webp', wins: 1 },
-  { id: 9, name: 'Hadjar', color: '#6692FF', img: '/drivers/hadjar.webp', wins: 0 },
-  { id: 10, name: 'Hamilton', color: '#EF1A2D', img: '/drivers/hamilton.webp', wins: 105 },
-  { id: 11, name: 'Hulkenberg', color: '#00e701', img: '/drivers/hulkenberg.webp', wins: 0 },
-  { id: 12, name: 'Lawson', color: '#6692FF', img: '/drivers/lawson.webp', wins: 0 },
-  { id: 13, name: 'Leclerc', color: '#EF1A2D', img: '/drivers/leclerc.webp', wins: 8 },
-  { id: 14, name: 'Lindblad', color: '#101C50', img: '/drivers/lindblad.webp', wins: 0 },
-  { id: 15, name: 'Norris', color: '#FF8000', img: '/drivers/norris.webp', wins: 3 },
-  { id: 16, name: 'Ocon', color: '#B6BABD', img: '/drivers/ocon.webp', wins: 1 },
-  { id: 17, name: 'Perez', color: '#101C50', img: '/drivers/perez.webp', wins: 6 },
-  { id: 18, name: 'Piastri', color: '#FF8000', img: '/drivers/piastri.webp', wins: 2 },
-  { id: 19, name: 'Russell', color: '#00D2BE', img: '/drivers/russell.webp', wins: 2 },
-  { id: 20, name: 'Sainz', color: '#005AFF', img: '/drivers/sainz.webp', wins: 4 },
-  { id: 21, name: 'Stroll', color: '#006F62', img: '/drivers/stroll.webp', wins: 0 },
-  { id: 22, name: 'Verstappen', color: '#101C50', img: '/drivers/verstappen.webp', wins: 62 }
+  { id: 1, name: 'Albon', color: '#005AFF', img: '/drivers/albon.webp', podiums: 2 },
+  { id: 2, name: 'Alonso', color: '#006F62', img: '/drivers/alonso.webp', podiums: 106 },
+  { id: 3, name: 'Antonelli', color: '#00D2BE', img: '/drivers/antonelli.webp', podiums: 0 },
+  { id: 4, name: 'Bearman', color: '#B6BABD', img: '/drivers/bearman.webp', podiums: 0 },
+  { id: 5, name: 'Bortoleto', color: '#00e701', img: '/drivers/bortoleto.webp', podiums: 0 },
+  { id: 6, name: 'Bottas', color: '#B6BABD', img: '/drivers/bottas.webp', podiums: 67 },
+  { id: 7, name: 'Colapinto', color: '#005AFF', img: '/drivers/colapinto.webp', podiums: 0 },
+  { id: 8, name: 'Gasly', color: '#FF87BC', img: '/drivers/gasly.webp', podiums: 4 },
+  { id: 9, name: 'Hadjar', color: '#6692FF', img: '/drivers/hadjar.webp', podiums: 0 },
+  { id: 10, name: 'Hamilton', color: '#EF1A2D', img: '/drivers/hamilton.webp', podiums: 201 },
+  { id: 11, name: 'Hulkenberg', color: '#00e701', img: '/drivers/hulkenberg.webp', podiums: 0 },
+  { id: 12, name: 'Lawson', color: '#6692FF', img: '/drivers/lawson.webp', podiums: 0 },
+  { id: 13, name: 'Leclerc', color: '#EF1A2D', img: '/drivers/leclerc.webp', podiums: 41 },
+  { id: 14, name: 'Lindblad', color: '#101C50', img: '/drivers/lindblad.webp', podiums: 0 },
+  { id: 15, name: 'Norris', color: '#FF8000', img: '/drivers/norris.webp', podiums: 25 },
+  { id: 16, name: 'Ocon', color: '#B6BABD', img: '/drivers/ocon.webp', podiums: 3 },
+  { id: 17, name: 'Perez', color: '#101C50', img: '/drivers/perez.webp', podiums: 39 },
+  { id: 18, name: 'Piastri', color: '#FF8000', img: '/drivers/piastri.webp', podiums: 9 },
+  { id: 19, name: 'Russell', color: '#00D2BE', img: '/drivers/russell.webp', podiums: 14 },
+  { id: 20, name: 'Sainz', color: '#005AFF', img: '/drivers/sainz.webp', podiums: 25 },
+  { id: 21, name: 'Stroll', color: '#006F62', img: '/drivers/stroll.webp', podiums: 3 },
+  { id: 22, name: 'Verstappen', color: '#101C50', img: '/drivers/verstappen.webp', podiums: 111 }
 ];
 
 const getRandomDriver = (excludeDriver) => {
@@ -56,7 +56,7 @@ const F1HigherLower = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [revealMode, setRevealMode] = useState(false);
 
-  // --- 1. AUTH & DATA SYNC ---
+  // --- AUTH & DATA SYNC ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -83,7 +83,7 @@ const F1HigherLower = () => {
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- 2. LEADERBOARD FETCHER ---
+  // --- LEADERBOARD FETCHER ---
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -95,7 +95,7 @@ const F1HigherLower = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- 3. GAME ENGINE ---
+  // --- GAME ENGINE ---
   const resetGame = () => {
     const first = getRandomDriver(null);
     setCurrentDriver(first);
@@ -128,8 +128,9 @@ const F1HigherLower = () => {
     if (revealMode || isGameOver) return;
     setRevealMode(true);
 
-    const isHigher = nextDriver.wins >= currentDriver.wins;
-    const isLower = nextDriver.wins <= currentDriver.wins;
+    // LOGIC SWITCHED TO PODIUMS
+    const isHigher = nextDriver.podiums >= currentDriver.podiums;
+    const isLower = nextDriver.podiums <= currentDriver.podiums;
     
     let isCorrect = false;
     if (guessType === 'higher' && isHigher) isCorrect = true;
@@ -201,7 +202,7 @@ const F1HigherLower = () => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
           {/* Top Bar (Score & User) */}
-          <div style={{ width: '100%', maxWidth: '700px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '750px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ff1801', textShadow: '0 0 15px rgba(255, 24, 1, 0.5)' }}>
               STREAK: {score}
             </div>
@@ -219,10 +220,10 @@ const F1HigherLower = () => {
             )}
           </div>
 
-          {/* THE DRIVER CARDS ARENA */}
+          {/* THE DRIVER CARDS ARENA - LOCKED HEIGHT */}
           <div style={{ 
             display: 'flex', width: '100%', maxWidth: '750px', gap: '20px', 
-            minHeight: '400px', alignItems: 'stretch' 
+            height: '450px', alignItems: 'stretch' // STRICT HEIGHT PREVENTS JUMPING
           }}>
             
             {/* LEFT CARD: Current Driver */}
@@ -236,8 +237,13 @@ const F1HigherLower = () => {
               <img src={currentDriver.img} alt={currentDriver.name} style={{ width: '150px', height: '150px', objectFit: 'contain', marginBottom: '15px', filter: `drop-shadow(0 0 10px ${currentDriver.color}88)` }} />
               <h2 style={{ color: currentDriver.color, fontSize: '2.2rem', textAlign: 'center', margin: '0 0 15px 0', textShadow: `0 0 10px ${currentDriver.color}55` }}>{currentDriver.name}</h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
-              <h1 style={{ color: 'white', fontSize: '4.5rem', margin: '5px 0', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>{currentDriver.wins}</h1>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Race Wins</p>
+              
+              {/* Fixed height container for numbers so layout doesn't shift */}
+              <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <h1 style={{ color: 'white', fontSize: '4.5rem', margin: '0', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>{currentDriver.podiums}</h1>
+              </div>
+              
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Podiums</p>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -258,36 +264,38 @@ const F1HigherLower = () => {
               <h2 style={{ color: nextDriver.color, fontSize: '2.2rem', textAlign: 'center', margin: '0 0 15px 0', textShadow: `0 0 10px ${nextDriver.color}55` }}>{nextDriver.name}</h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
               
-              {/* Guessing UI or Reveal */}
-              {!revealMode && !isGameOver ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', margin: '20px 0', width: '85%' }}>
-                  <button onClick={() => handleGuess('higher')} style={{ background: 'rgba(0, 175, 58, 0.2)', border: '2px solid #00af3a', color: '#00af3a', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                    <ChevronUp size={24}/> HIGHER
-                  </button>
-                  <button onClick={() => handleGuess('lower')} style={{ background: 'rgba(255, 24, 1, 0.2)', border: '2px solid #ff1801', color: '#ff1801', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                    <ChevronDown size={24}/> LOWER
-                  </button>
-                </div>
-              ) : (
-                <h1 style={{ color: isGameOver ? '#ff1801' : 'white', fontSize: '4.5rem', margin: '5px 0', textShadow: `0 0 20px ${isGameOver ? 'rgba(255,24,1,0.5)' : 'rgba(255,255,255,0.5)'}` }}>
-                  {nextDriver.wins}
-                </h1>
-              )}
+              {/* Fixed Height Wrapper for Guessing UI or Reveal */}
+              <div style={{ height: '140px', width: '85%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', margin: '10px 0' }}>
+                {!revealMode && !isGameOver ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
+                    <button onClick={() => handleGuess('higher')} style={{ background: 'rgba(0, 175, 58, 0.2)', border: '2px solid #00af3a', color: '#00af3a', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                      <ChevronUp size={24}/> HIGHER
+                    </button>
+                    <button onClick={() => handleGuess('lower')} style={{ background: 'rgba(255, 24, 1, 0.2)', border: '2px solid #ff1801', color: '#ff1801', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                      <ChevronDown size={24}/> LOWER
+                    </button>
+                  </div>
+                ) : (
+                  <h1 style={{ color: isGameOver ? '#ff1801' : 'white', fontSize: '4.5rem', margin: '0', textShadow: `0 0 20px ${isGameOver ? 'rgba(255,24,1,0.5)' : 'rgba(255,255,255,0.5)'}` }}>
+                    {nextDriver.podiums}
+                  </h1>
+                )}
+              </div>
 
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Race Wins</p>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Podiums</p>
             </div>
 
           </div>
 
           {/* Game Over Message */}
-          {isGameOver && (
-             <div style={{ marginTop: '30px', textAlign: 'center', animation: 'fadeIn 0.5s ease' }}>
-                <h2 style={{ color: '#ff1801', margin: '0 0 10px 0', fontSize: '2.5rem', textShadow: '0 0 20px rgba(255,24,1,0.6)' }}>CRASHED OUT!</h2>
-             </div>
-          )}
+          <div style={{ height: '50px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {isGameOver && (
+              <h2 style={{ color: '#ff1801', margin: 0, fontSize: '2.5rem', textShadow: '0 0 20px rgba(255,24,1,0.6)', animation: 'fadeIn 0.5s ease' }}>CRASHED OUT!</h2>
+            )}
+          </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '20px', marginTop: '40px', width: '100%', maxWidth: '750px' }}>
+          <div style={{ display: 'flex', gap: '20px', marginTop: '10px', width: '100%', maxWidth: '750px' }}>
             <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '20px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
               <ArrowLeft size={24}/> MENU
             </button>
