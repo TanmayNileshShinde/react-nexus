@@ -1,26 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2, FileText, Zap, LayoutGrid, Crown } from 'lucide-react';
+import { Gamepad2, FileText, Zap, LayoutGrid, Crown, Activity } from 'lucide-react';
 
 const Home = () => {
-  // Shared styles for uniform, compact cards
+  // Shared wrapper style: Locks the width and height of the invisible link container
   const cardWrapperStyle = { 
     textDecoration: 'none', 
-    display: 'block', 
-    width: '180px' 
+    display: 'flex', 
+    width: '180px',
+    height: '120px'
   };
 
+  // Shared inner style: Tells the glass panel to perfectly fill the wrapper and center content
   const cardInnerStyle = (borderColor) => ({
+    width: '100%',
+    height: '100%',
     padding: '15px',
     border: `1px solid ${borderColor}`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center', // Centers content perfectly in the middle
+    justifyContent: 'center', 
     cursor: 'pointer',
     transition: 'transform 0.2s',
-    height: '120px', // Decreased height for a more compact look
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    overflow: 'hidden' 
   });
 
   return (
@@ -113,6 +117,7 @@ const Home = () => {
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Vs Bot & PvP</p>
           </div>
         </Link>
+
         {/* Card 6: Snake Arena */}
         <Link to="/snake" style={cardWrapperStyle}>
           <div className="glass-panel" style={cardInnerStyle('#00ff88')}
@@ -124,6 +129,7 @@ const Home = () => {
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Classic Survival</p>
           </div>
         </Link>
+        
       </div>
     </div>
   );
