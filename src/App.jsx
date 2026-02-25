@@ -6,7 +6,9 @@ import MemoryGame from './pages/MemoryGame';
 import ReactionGame from './pages/ReactionGame';
 import ChessGame from './pages/ChessGame'; 
 import SnakeGame from './pages/SnakeGame';
+import TypingMaster from './pages/TypingMaster';
 import F1HigherLower from './pages/F1HigherLower';
+
 import './styles/App.css';
 
 function App() {
@@ -20,6 +22,7 @@ function App() {
         <Route path="/chess" element={<ChessGame />} />
         <Route path="/snake" element={<SnakeGame />} />
         <Route path="/f1" element={<F1HigherLower />} />
+        <Route path="/type" element={<TypingMaster />} />
       </Routes>
     </Router>
   );
