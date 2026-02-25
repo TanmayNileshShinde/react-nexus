@@ -96,11 +96,11 @@ const Home = () => {
 
         {/* Card 4: Reaction Test */}
         <Link to="/reaction" style={cardWrapperStyle}>
-          <div className="glass-panel" style={cardInnerStyle('#00af3a')}
+          <div className="glass-panel" style={cardInnerStyle('#d19c2a')}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Zap size={28} color="#00af3a" />
+            <Zap size={28} color="#d19c2a" />
             <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Reaction Test</h4>
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Test Reactions</p>
           </div>
@@ -108,11 +108,11 @@ const Home = () => {
 
         {/* Card 5: Neon 2048 */}
         <Link to="/2048" style={cardWrapperStyle}>
-          <div className="glass-panel" style={cardInnerStyle('#bc13fe')}
+          <div className="glass-panel" style={cardInnerStyle('#d3fe13')}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Grid size={28} color="#bc13fe" />
+            <Grid size={28} color="#d3fe13" />
             <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Neon 2048</h4>
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Classic Puzzle</p>
           </div>
@@ -144,11 +144,11 @@ const Home = () => {
         
         {/* Card 8: F1 Higher/Lower */}
         <Link to="/f1" style={cardWrapperStyle}>
-          <div className="glass-panel" style={cardInnerStyle('#ff1801')}
+          <div className="glass-panel" style={cardInnerStyle('#018dff')}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Flag size={28} color="#ff1801" />
+            <Flag size={28} color="#018dff" />
             <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>F1 Trivia</h4>
             <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Higher / Lower</p>
           </div>
