@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Gamepad2, FileText, Zap, LayoutGrid, Crown } from 'lucide-react';
 
 const Home = () => {
-  // Shared styles for uniform cards
+  // Shared styles for uniform, compact cards
   const cardWrapperStyle = { 
     textDecoration: 'none', 
     display: 'block', 
@@ -11,15 +11,15 @@ const Home = () => {
   };
 
   const cardInnerStyle = (borderColor) => ({
-    padding: '20px',
+    padding: '15px',
     border: `1px solid ${borderColor}`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center', // Centers content vertically
+    justifyContent: 'center', // Centers content perfectly in the middle
     cursor: 'pointer',
     transition: 'transform 0.2s',
-    height: '140px', // Fixed height for uniformity
+    height: '120px', // Decreased height for a more compact look
     boxSizing: 'border-box'
   });
 
@@ -50,7 +50,7 @@ const Home = () => {
         flexWrap: 'wrap', 
         justifyContent: 'center', 
         gap: '20px', 
-        maxWidth: '780px', 
+        maxWidth: '800px', 
         margin: '0 auto' 
       }}>
         
@@ -60,21 +60,21 @@ const Home = () => {
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Gamepad2 size={32} color="#00f3ff" />
-            <h4 style={{ margin: '10px 0 0 0', color: 'white', fontSize: '0.95rem' }}>Tic-Tac-Toe</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Vs AI & PvP</p>
+            <Gamepad2 size={28} color="#00f3ff" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Tic-Tac-Toe</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Vs AI & PvP</p>
           </div>
         </Link>
         
-        {/* Card 2: Angular Math Blitz */}
+        {/* Card 2: Math Blitz */}
         <a href="/math-game.html" style={cardWrapperStyle}>
           <div className="glass-panel" style={cardInnerStyle('#bc13fe')}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <FileText size={32} color="#bc13fe" />
-            <h4 style={{ margin: '10px 0 0 0', color: 'white', fontSize: '0.95rem' }}>Math Blitz</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>AngularJS Quiz</p>
+            <FileText size={28} color="#bc13fe" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Math Blitz</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>AngularJS Quiz</p>
           </div>
         </a>
         
@@ -84,9 +84,9 @@ const Home = () => {
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <LayoutGrid size={32} color="#ff4444" />
-            <h4 style={{ margin: '10px 0 5px 0', color: 'white', fontSize: '0.95rem' }}>F1 Memory</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Match Drivers</p>
+            <LayoutGrid size={28} color="#ff4444" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>F1 Memory</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Match Drivers</p>
           </div>
         </Link>
 
@@ -96,21 +96,21 @@ const Home = () => {
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Zap size={32} color="#00af3a" />
-            <h4 style={{ margin: '10px 0 0 0', color: 'white', fontSize: '0.95rem' }}>Reaction Test</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Test Reactions</p>
+            <Zap size={28} color="#00af3a" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Reaction Test</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Test Reactions</p>
           </div>
         </Link>
 
-        {/* Card 5: The Grandmaster (Chess) */}
+        {/* Card 5: Nexus Chess */}
         <Link to="/chess" style={cardWrapperStyle}>
           <div className="glass-panel" style={cardInnerStyle('#ffd700')}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Crown size={32} color="#ffd700" />
-            <h4 style={{ margin: '10px 0 0 0', color: 'white', fontSize: '0.95rem' }}>Nexus Chess</h4>
-            <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, color: '#ccc' }}>Vs Bot & PvP</p>
+            <Crown size={28} color="#ffd700" />
+            <h4 style={{ margin: '8px 0 0 0', color: 'white', fontSize: '0.9rem' }}>Nexus Chess</h4>
+            <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.6, color: '#ccc' }}>Vs Bot & PvP</p>
           </div>
         </Link>
         
