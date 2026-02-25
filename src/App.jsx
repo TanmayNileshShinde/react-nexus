@@ -8,6 +8,7 @@ import ChessGame from './pages/ChessGame';
 import SnakeGame from './pages/SnakeGame';
 import TypingMaster from './pages/TypingMaster';
 import F1HigherLower from './pages/F1HigherLower';
+import Neon2048 from './pages/Neon2048';
 
 import './styles/App.css';
 
@@ -23,6 +24,7 @@ function App() {
         <Route path="/snake" element={<SnakeGame />} />
         <Route path="/f1" element={<F1HigherLower />} />
         <Route path="/type" element={<TypingMaster />} />
+        <Route path="/2048" element={<Neon2048 />} />
       </Routes>
     </Router>
   );
