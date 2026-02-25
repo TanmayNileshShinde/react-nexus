@@ -42,48 +42,36 @@ const getRandomDriver = (excludeDriver) => {
 };
 
 const F1HigherLower = () => {
-  // --- STATES ---
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
   const [stats, setStats] = useState({ f1HighScore: 0, f1Matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Game States
   const [currentDriver, setCurrentDriver] = useState(getRandomDriver(null));
   const [nextDriver, setNextDriver] = useState(getRandomDriver(currentDriver));
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [revealMode, setRevealMode] = useState(false);
 
-  // --- AUTH & DATA SYNC ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
-      
       const userRef = doc(db, "users", result.user.uid);
       const docSnap = await getDoc(userRef);
 
       if (!docSnap.exists()) {
-        const initialData = { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          f1HighScore: 0, f1Matches: 0 
-        };
+        const initialData = { displayName: result.user.displayName, photoURL: result.user.photoURL, f1HighScore: 0, f1Matches: 0 };
         await setDoc(userRef, initialData);
         setStats(initialData);
       } else {
         const data = docSnap.data();
-        setStats({
-          f1HighScore: data.f1HighScore || 0,
-          f1Matches: data.f1Matches || 0
-        });
+        setStats({ f1HighScore: data.f1HighScore || 0, f1Matches: data.f1Matches || 0 });
       }
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- LEADERBOARD FETCHER ---
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -95,7 +83,6 @@ const F1HigherLower = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- GAME ENGINE ---
   const resetGame = () => {
     const first = getRandomDriver(null);
     setCurrentDriver(first);
@@ -112,23 +99,14 @@ const F1HigherLower = () => {
     const userRef = doc(db, "users", user.uid);
     const isNewHighScore = score > stats.f1HighScore;
     
-    setStats(prev => ({
-      ...prev,
-      f1HighScore: isNewHighScore ? score : prev.f1HighScore,
-      f1Matches: prev.f1Matches + 1
-    }));
-
-    await updateDoc(userRef, {
-      f1Matches: increment(1),
-      ...(isNewHighScore && { f1HighScore: score })
-    });
+    setStats(prev => ({ ...prev, f1HighScore: isNewHighScore ? score : prev.f1HighScore, f1Matches: prev.f1Matches + 1 }));
+    await updateDoc(userRef, { f1Matches: increment(1), ...(isNewHighScore && { f1HighScore: score }) });
   };
 
   const handleGuess = (guessType) => {
     if (revealMode || isGameOver) return;
     setRevealMode(true);
 
-    // LOGIC SWITCHED TO PODIUMS
     const isHigher = nextDriver.podiums >= currentDriver.podiums;
     const isLower = nextDriver.podiums <= currentDriver.podiums;
     
@@ -148,7 +126,6 @@ const F1HigherLower = () => {
     }, 1500); 
   };
 
-  // --- UI COMPONENTS ---
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '30px', 
@@ -185,7 +162,6 @@ const F1HigherLower = () => {
         </h2>
       </div>
 
-      {/* MENU VIEW */}
       {view === 'menu' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '500px', margin: '0 auto', width: '100%' }}>
           <MenuCard icon={Flag} title="Play Career Mode" subtitle="Ranked F1 Trivia" color="#ff1801" onClick={() => { setView('game'); resetGame(); }} />
@@ -197,7 +173,6 @@ const F1HigherLower = () => {
         </div>
       )}
 
-      {/* GAME VIEW */}
       {view === 'game' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
@@ -220,33 +195,48 @@ const F1HigherLower = () => {
             )}
           </div>
 
-          {/* THE DRIVER CARDS ARENA - LOCKED HEIGHT */}
+          {/* BULLETPROOF DRIVER CARDS ARENA */}
           <div style={{ 
             display: 'flex', width: '100%', maxWidth: '750px', gap: '20px', 
-            height: '450px', alignItems: 'stretch' // STRICT HEIGHT PREVENTS JUMPING
+            height: '450px', alignItems: 'center', boxSizing: 'border-box'
           }}>
             
             {/* LEFT CARD: Current Driver */}
             <div className="glass-panel" style={{ 
-              flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              flex: 1, width: '50%', height: '450px', display: 'flex', flexDirection: 'column', alignItems: 'center',
               background: `linear-gradient(to bottom, ${currentDriver.color}11, rgba(0,0,0,0.6))`, 
-              border: `2px solid ${currentDriver.color}`,
-              boxShadow: `0 0 30px ${currentDriver.color}33`,
-              padding: '20px'
+              border: `2px solid ${currentDriver.color}`, boxShadow: `0 0 30px ${currentDriver.color}33`,
+              padding: '20px', boxSizing: 'border-box'
             }}>
-              <img src={currentDriver.img} alt={currentDriver.name} style={{ width: '150px', height: '150px', objectFit: 'contain', marginBottom: '15px', filter: `drop-shadow(0 0 10px ${currentDriver.color}88)` }} />
-              <h2 style={{ color: currentDriver.color, fontSize: '2.2rem', textAlign: 'center', margin: '0 0 15px 0', textShadow: `0 0 10px ${currentDriver.color}55` }}>{currentDriver.name}</h2>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
               
-              {/* Fixed height container for numbers so layout doesn't shift */}
-              <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <h1 style={{ color: 'white', fontSize: '4.5rem', margin: '0', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>{currentDriver.podiums}</h1>
+              {/* 1. Image Container - STRICT 150px Height */}
+              <div style={{ height: '150px', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '15px', flexShrink: 0 }}>
+                <img src={currentDriver.img} alt={currentDriver.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: `drop-shadow(0 0 10px ${currentDriver.color}88)` }} />
               </div>
               
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Podiums</p>
+              {/* 2. Name Container - STRICT 40px Height */}
+              <div style={{ height: '40px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', flexShrink: 0 }}>
+                <h2 style={{ color: currentDriver.color, fontSize: '2rem', textAlign: 'center', margin: 0, textShadow: `0 0 10px ${currentDriver.color}55`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentDriver.name}</h2>
+              </div>
+              
+              {/* 3. 'Has' Text - STRICT 25px Height */}
+              <div style={{ height: '25px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
+              </div>
+
+              {/* 4. Number Container - STRICT 100px Height */}
+              <div style={{ height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '10px 0', flexShrink: 0 }}>
+                <h1 style={{ color: 'white', fontSize: '4.5rem', margin: 0, textShadow: '0 0 20px rgba(255,255,255,0.5)', lineHeight: 1 }}>{currentDriver.podiums}</h1>
+              </div>
+
+              {/* 5. 'Podiums' Text - STRICT 25px Height */}
+              <div style={{ height: '25px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Podiums</p>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* VS Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <div style={{ background: '#333', padding: '20px', borderRadius: '50%', color: 'white', fontWeight: '900', fontSize: '1.5rem', boxShadow: '0 0 20px rgba(0,0,0,0.8)', zIndex: 10 }}>
                 VS
               </div>
@@ -254,41 +244,55 @@ const F1HigherLower = () => {
 
             {/* RIGHT CARD: Next Driver Guessing */}
             <div className="glass-panel" style={{ 
-              flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              flex: 1, width: '50%', height: '450px', display: 'flex', flexDirection: 'column', alignItems: 'center',
               background: `linear-gradient(to bottom, ${nextDriver.color}11, rgba(0,0,0,0.6))`, 
-              border: `2px solid ${isGameOver ? '#ff1801' : nextDriver.color}`,
-              boxShadow: `0 0 30px ${nextDriver.color}33`,
-              padding: '20px'
+              border: `2px solid ${isGameOver ? '#ff1801' : nextDriver.color}`, boxShadow: `0 0 30px ${nextDriver.color}33`,
+              padding: '20px', boxSizing: 'border-box'
             }}>
-              <img src={nextDriver.img} alt={nextDriver.name} style={{ width: '150px', height: '150px', objectFit: 'contain', marginBottom: '15px', filter: `drop-shadow(0 0 10px ${nextDriver.color}88)` }} />
-              <h2 style={{ color: nextDriver.color, fontSize: '2.2rem', textAlign: 'center', margin: '0 0 15px 0', textShadow: `0 0 10px ${nextDriver.color}55` }}>{nextDriver.name}</h2>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
               
-              {/* Fixed Height Wrapper for Guessing UI or Reveal */}
-              <div style={{ height: '140px', width: '85%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', margin: '10px 0' }}>
+              {/* 1. Image Container - STRICT 150px Height */}
+              <div style={{ height: '150px', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '15px', flexShrink: 0 }}>
+                <img src={nextDriver.img} alt={nextDriver.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: `drop-shadow(0 0 10px ${nextDriver.color}88)` }} />
+              </div>
+              
+              {/* 2. Name Container - STRICT 40px Height */}
+              <div style={{ height: '40px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', flexShrink: 0 }}>
+                <h2 style={{ color: nextDriver.color, fontSize: '2rem', textAlign: 'center', margin: 0, textShadow: `0 0 10px ${nextDriver.color}55`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextDriver.name}</h2>
+              </div>
+              
+              {/* 3. 'Has' Text - STRICT 25px Height */}
+              <div style={{ height: '25px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0 }}>Has</p>
+              </div>
+
+              {/* 4. Buttons / Number Container - STRICT 100px Height */}
+              <div style={{ height: '100px', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', margin: '10px 0', flexShrink: 0 }}>
                 {!revealMode && !isGameOver ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
-                    <button onClick={() => handleGuess('higher')} style={{ background: 'rgba(0, 175, 58, 0.2)', border: '2px solid #00af3a', color: '#00af3a', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                      <ChevronUp size={24}/> HIGHER
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '85%' }}>
+                    <button onClick={() => handleGuess('higher')} style={{ height: '45px', background: 'rgba(0, 175, 58, 0.2)', border: '2px solid #00af3a', color: '#00af3a', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px', padding: 0 }}>
+                      <ChevronUp size={20}/> HIGHER
                     </button>
-                    <button onClick={() => handleGuess('lower')} style={{ background: 'rgba(255, 24, 1, 0.2)', border: '2px solid #ff1801', color: '#ff1801', padding: '15px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                      <ChevronDown size={24}/> LOWER
+                    <button onClick={() => handleGuess('lower')} style={{ height: '45px', background: 'rgba(255, 24, 1, 0.2)', border: '2px solid #ff1801', color: '#ff1801', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px', padding: 0 }}>
+                      <ChevronDown size={20}/> LOWER
                     </button>
                   </div>
                 ) : (
-                  <h1 style={{ color: isGameOver ? '#ff1801' : 'white', fontSize: '4.5rem', margin: '0', textShadow: `0 0 20px ${isGameOver ? 'rgba(255,24,1,0.5)' : 'rgba(255,255,255,0.5)'}` }}>
+                  <h1 style={{ color: isGameOver ? '#ff1801' : 'white', fontSize: '4.5rem', margin: 0, textShadow: `0 0 20px ${isGameOver ? 'rgba(255,24,1,0.5)' : 'rgba(255,255,255,0.5)'}`, lineHeight: 1 }}>
                     {nextDriver.podiums}
                   </h1>
                 )}
               </div>
 
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Podiums</p>
+              {/* 5. 'Podiums' Text - STRICT 25px Height */}
+              <div style={{ height: '25px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>Podiums</p>
+              </div>
             </div>
 
           </div>
 
           {/* Game Over Message */}
-          <div style={{ height: '50px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ height: '50px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
             {isGameOver && (
               <h2 style={{ color: '#ff1801', margin: 0, fontSize: '2.5rem', textShadow: '0 0 20px rgba(255,24,1,0.6)', animation: 'fadeIn 0.5s ease' }}>CRASHED OUT!</h2>
             )}
