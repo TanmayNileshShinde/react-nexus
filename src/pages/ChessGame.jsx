@@ -12,16 +12,15 @@ import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, 
 
 const ChessGame = () => {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('menu'); // 'menu', 'game_ai', 'game_friend', 'leaderboard'
+  const [view, setView] = useState('menu'); 
   const [game, setGame] = useState(new Chess());
-  const [difficulty, setDifficulty] = useState(2); // 1-5
+  const [difficulty, setDifficulty] = useState(2); 
   const [stats, setStats] = useState({ chessWins: 0, chessLosses: 0, chessMatches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
   const engine = useRef(null);
 
-  // --- 1. STOCKFISH AI SETUP ---
   useEffect(() => {
     engine.current = new Worker('/stockfish.js');
     engine.current.onmessage = (e) => {
@@ -33,7 +32,6 @@ const ChessGame = () => {
     return () => engine.current.terminate();
   }, []);
 
-  // --- 2. AUTH & FIREBASE ---
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -54,23 +52,30 @@ const ChessGame = () => {
     } finally { setIsLoading(false); }
   };
 
-  // --- 3. GAME LOGIC ---
+  // --- FIXED GAME LOGIC ---
   const makeMove = (move) => {
     try {
       const gameCopy = new Chess(game.fen());
-      gameCopy.move(move);
-      setGame(gameCopy);
+      const result = gameCopy.move(move); // Capture the result of the move
       
-      if (gameCopy.isGameOver() && view === 'game_ai' && user) {
-        const won = gameCopy.isCheckmate() && gameCopy.turn() === 'b'; 
-        updateFirebaseStats(won);
+      if (result) {
+        setGame(gameCopy);
+        
+        if (gameCopy.isGameOver() && view === 'game_ai' && user) {
+          const won = gameCopy.isCheckmate() && gameCopy.turn() === 'b'; 
+          updateFirebaseStats(won);
+        }
+        return result; // Return result so onDrop knows it worked
       }
     } catch (e) { return null; }
+    return null;
   };
 
   const onDrop = (source, target) => {
     const move = { from: source, to: target, promotion: 'q' };
     const result = makeMove(move);
+    
+    // If move is invalid, return false to snap piece back
     if (!result) return false;
 
     if (view === 'game_ai' && !game.isGameOver()) {
@@ -91,7 +96,6 @@ const ChessGame = () => {
     });
   };
 
-  // --- UI COMPONENTS ---
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '20px', 
@@ -108,49 +112,67 @@ const ChessGame = () => {
   );
 
   return (
-    <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', minHeight: '700px', padding: '30px', margin: '0 auto' }}>
-      <h2 style={{ textAlign: 'center', background: 'linear-gradient(to right, #ffd700, #ff8c00)', WebkitBackgroundClip: 'text', color: 'transparent', fontSize: '2rem', fontWeight: '800' }}>
-        CHESS ARENA
+    <div className="glass-panel" style={{ 
+      width: '100%', 
+      maxWidth: '450px', // Matches Tic-Tac-Toe
+      minHeight: '600px', // Matches Tic-Tac-Toe
+      padding: '30px', 
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <h2 style={{ 
+        textAlign: 'center', 
+        background: 'linear-gradient(to right, #ffd700, #ff8c00)', 
+        WebkitBackgroundClip: 'text', 
+        color: 'transparent', 
+        fontSize: '1.8rem', 
+        fontWeight: '800',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>
+        Chess Arena
       </h2>
 
       {view === 'menu' && (
-        <div style={{ marginTop: '40px' }}>
-          <MenuCard icon={Bot} title="Vs Stockfish AI" subtitle="Train against the world's strongest bot" color="#ffd700" onClick={() => setView('game_ai')} />
-          <MenuCard icon={Users} title="Vs Friend" subtitle="Local 1v1 multiplayer" color="#00f3ff" onClick={() => setView('game_friend')} />
-          <MenuCard icon={Trophy} title="Leaderboard" subtitle="Climb the Grandmaster ranks" color="#bc13fe" onClick={fetchLeaderboard} />
-          <Link to="/" style={{ display: 'block', textAlign: 'center', color: '#666', marginTop: '20px', textDecoration: 'none' }}><ArrowLeft size={14}/> Back to Nexus</Link>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', marginTop: '20px' }}>
+          <MenuCard icon={Bot} title="Vs Stockfish" subtitle="Ranked AI Challenge" color="#ffd700" onClick={() => setView('game_ai')} />
+          <MenuCard icon={Users} title="Vs Friend" subtitle="Local Multiplayer" color="#00f3ff" onClick={() => setView('game_friend')} />
+          <MenuCard icon={Trophy} title="Leaderboard" subtitle="Global Rankings" color="#bc13fe" onClick={fetchLeaderboard} />
+          <Link to="/" style={{ textAlign: 'center', marginTop: '20px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '0.9rem' }}>
+            <ArrowLeft size={14} style={{ marginRight: '5px' }}/> Back to Nexus
+          </Link>
         </div>
       )}
 
       {(view === 'game_ai' || view === 'game_friend') && (
-        <div>
-           {/* Reusing your Profile Bar style */}
-           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', minHeight: '40px' }}>
              {!user ? (
-               <button onClick={handleLogin} style={{ background: 'white', borderRadius: '20px', padding: '5px 15px', fontWeight: 'bold' }}>Login</button>
+               <button onClick={handleLogin} style={{ background: 'white', border: 'none', borderRadius: '20px', padding: '5px 15px', fontWeight: 'bold', cursor: 'pointer' }}>Login</button>
              ) : (
-               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '5px 15px', borderRadius: '20px' }}>
-                 <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
-                    <div style={{ fontWeight: 'bold' }}>{user.displayName}</div>
-                    <div style={{ color: '#ffd700' }}>{stats.chessWins}W - {stats.chessLosses}L</div>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '5px 15px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                 <div style={{ textAlign: 'right', fontSize: '0.75rem' }}>
+                    <div style={{ fontWeight: 'bold', color: 'white' }}>{user.displayName}</div>
+                    <div style={{ color: '#ffd700' }}>{stats.chessWins || 0}W - {stats.chessLosses || 0}L</div>
                  </div>
                  <img src={user.photoURL} style={{ width: 30, height: 30, borderRadius: '50%', border: '2px solid #ffd700' }} alt="user" />
                </div>
              )}
            </div>
 
-           <div style={{ width: '100%', marginBottom: '20px' }}>
-             <Chessboard position={game.fen()} onPieceDrop={onDrop} boardOrientation="white" />
+           <div style={{ width: '100%', marginBottom: '20px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 0 30px rgba(255, 215, 0, 0.1)' }}>
+             <Chessboard position={game.fen()} onPieceDrop={onDrop} boardOrientation="white" customDarkSquareStyle={{ backgroundColor: '#2c3e50' }} customLightSquareStyle={{ backgroundColor: '#95a5a6' }} />
            </div>
 
-           <div style={{ display: 'flex', gap: '10px' }}>
-             <button className={styles.button} onClick={() => setView('menu')} style={{ flex: 1, background: '#333' }}>MENU</button>
-             <button className={styles.button} onClick={() => setGame(new Chess())} style={{ flex: 1, background: '#ffd700', color: 'black' }}>RESET</button>
+           <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
+             <button className={styles.button} onClick={() => { setView('menu'); setGame(new Chess()); }} style={{ flex: 1, background: 'rgba(255, 255, 255, 0.05)' }}>MENU</button>
+             <button className={styles.button} onClick={() => setGame(new Chess())} style={{ flex: 1, background: 'rgba(255, 215, 0, 0.1)', border: '1px solid #ffd70033', color: '#ffd700' }}>RESET</button>
            </div>
         </div>
       )}
 
-      {/* Leaderboard View follows the same logic as your Tic-Tac-Toe file */}
+      {/* Leaderboard uses same logic as TicTacToe */}
     </div>
   );
 };
