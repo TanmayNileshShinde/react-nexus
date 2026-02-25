@@ -4,7 +4,13 @@ import { Gamepad2, FileText, Zap, LayoutGrid, Crown } from 'lucide-react';
 
 const Home = () => {
   return (
-    <div className="glass-panel" style={{ width: '100%', maxWidth: '900px', margin: '0 auto', textAlign: 'center', minHeight: 'fit-content', paddingBottom: '40px' }}>
+    <div className="glass-panel" style={{ 
+      width: 'fit-content', 
+      margin: '40px auto', 
+      textAlign: 'center', 
+      padding: '40px', 
+      height: 'fit-content' 
+    }}>
       <h1 style={{ 
         fontSize: '2.5rem', 
         background: 'linear-gradient(to right, #00f3ff, #bc13fe)', 
@@ -19,8 +25,14 @@ const Home = () => {
         Code. Play. Create.
       </p>
 
-      {/* Flexbox layout for perfect centering */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        justifyContent: 'center', 
+        gap: '20px', 
+        maxWidth: '780px', 
+        margin: '0 auto' 
+      }}>
         
         {/* Card 1: Tic-Tac-Toe */}
         <Link to="/game" style={{ textDecoration: 'none', display: 'block', width: '180px' }}>
@@ -32,7 +44,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: 'auto' /* Changed from 100% to auto */
+            height: 'auto'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -53,7 +65,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: 'auto' /* Changed from 100% to auto */
+            height: 'auto'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -74,7 +86,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: 'auto' /* Changed from 100% to auto */
+            height: 'auto'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -95,7 +107,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: 'auto' /* Changed from 100% to auto */
+            height: 'auto'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -116,7 +128,7 @@ const Home = () => {
             alignItems: 'center',
             cursor: 'pointer',
             transition: 'transform 0.2s',
-            height: 'auto' /* Changed from 100% to auto */
+            height: 'auto'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
