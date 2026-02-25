@@ -1,135 +1,156 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, RefreshCw, Trophy, User, Bot, Users, Crown } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import styles from '../styles/Game.module.css';
 
-const ChessGame = () => {
+// FIREBASE IMPORTS
+import { auth, googleProvider, db } from '../firebase';
+import { signInWithPopup } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+
+const ChessArena = () => {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('menu'); // 'menu', 'game_ai', 'game_friend', 'leaderboard'
   const [game, setGame] = useState(new Chess());
-  const [mode, setMode] = useState('pvp'); // 'pvp' or 'bot'
-  const [difficulty, setDifficulty] = useState(1); // 1 to 5
-  const [leaderboard, setLeaderboard] = useState({ pvpMatches: 0, botWins: 0 });
-  const [status, setStatus] = useState('Game ready!');
+  const [difficulty, setDifficulty] = useState(2); // 1-5
+  const [stats, setStats] = useState({ chessWins: 0, chessLosses: 0, chessMatches: 0 });
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const engine = useRef(null);
 
-  // 1. Initialize Leaderboard & Stockfish Engine
+  // --- 1. STOCKFISH AI SETUP ---
   useEffect(() => {
-    // Load local storage scores
-    const savedScores = JSON.parse(localStorage.getItem('nexusChessLeaderboard')) || { pvpMatches: 0, botWins: 0 };
-    setLeaderboard(savedScores);
-
-    // Initialize the Web Worker for the bot
     engine.current = new Worker('/stockfish.js');
     engine.current.onmessage = (e) => {
-      const msg = e.data;
-      if (msg.startsWith('bestmove')) {
-        const bestMove = msg.split(' ')[1];
-        makeAMove(bestMove);
+      if (e.data.startsWith('bestmove')) {
+        const bestMove = e.data.split(' ')[1];
+        makeMove(bestMove);
       }
     };
-
-    return () => {
-      if (engine.current) engine.current.terminate(); // Cleanup worker on unmount
-    };
+    return () => engine.current.terminate();
   }, []);
 
-  // 2. Handle Game End and Leaderboard Updates
-  useEffect(() => {
-    if (game.isCheckmate()) {
-      const winner = game.turn() === 'w' ? 'Black' : 'White';
-      setStatus(`Checkmate! ${winner} wins!`);
-      updateLeaderboard(winner);
-    } else if (game.isDraw()) {
-      setStatus('Draw!');
-    } else {
-      setStatus(`Turn: ${game.turn() === 'w' ? 'White' : 'Black'}`);
-    }
-  }, [game]);
-
-  const updateLeaderboard = (winner) => {
-    const newScores = { ...leaderboard };
-    if (mode === 'pvp') {
-      newScores.pvpMatches += 1;
-    } else if (mode === 'bot' && winner === 'White') {
-      newScores.botWins += 1; // Assuming player is always White against the bot
-    }
-    setLeaderboard(newScores);
-    localStorage.setItem('nexusChessLeaderboard', JSON.stringify(newScores));
+  // --- 2. AUTH & FIREBASE ---
+  const handleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      setUser(result.user);
+      const userRef = doc(db, "users", result.user.uid);
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) setStats(docSnap.data());
+    } catch (error) { console.error("Login failed", error); }
   };
 
-  // 3. Move Logic
-  const makeAMove = (move) => {
+  const fetchLeaderboard = async () => {
+    setView('leaderboard');
+    setIsLoading(true);
+    try {
+      const q = query(collection(db, "users"), orderBy("chessWins", "desc"), limit(10));
+      const snap = await getDocs(q);
+      setLeaderboardData(snap.docs.map(d => d.data()));
+    } finally { setIsLoading(false); }
+  };
+
+  // --- 3. GAME LOGIC ---
+  const makeMove = (move) => {
     try {
       const gameCopy = new Chess(game.fen());
-      const result = gameCopy.move(move);
+      gameCopy.move(move);
       setGame(gameCopy);
-      return result;
-    } catch (e) {
-      return null;
-    }
+      
+      if (gameCopy.isGameOver() && view === 'game_ai' && user) {
+        const won = gameCopy.isCheckmate() && gameCopy.turn() === 'b'; 
+        updateFirebaseStats(won);
+      }
+    } catch (e) { return null; }
   };
 
-  const onDrop = (sourceSquare, targetSquare) => {
-    const move = makeAMove({
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: 'q', // Auto-promote to Queen
-    });
+  const onDrop = (source, target) => {
+    const move = { from: source, to: target, promotion: 'q' };
+    const result = makeMove(move);
+    if (!result) return false;
 
-    if (move === null) return false; // Illegal move
-
-    // If playing Bot, let Stockfish calculate the next move
-    if (mode === 'bot' && !game.isGameOver() && game.turn() === 'b') {
-      // Difficulty 1-5 maps to Stockfish search depth 2-10
-      const depth = difficulty * 2; 
-      engine.current.postMessage(`position fen ${game.fen()}`);
-      engine.current.postMessage(`go depth ${depth}`);
+    if (view === 'game_ai' && !game.isGameOver()) {
+      setTimeout(() => {
+        engine.current.postMessage(`position fen ${game.fen()}`);
+        engine.current.postMessage(`go depth ${difficulty * 2}`);
+      }, 500);
     }
     return true;
   };
 
-  const resetGame = () => setGame(new Chess());
+  const updateFirebaseStats = async (isWin) => {
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, {
+      chessMatches: increment(1),
+      chessWins: isWin ? increment(1) : increment(0),
+      chessLosses: !isWin ? increment(1) : increment(0)
+    });
+  };
+
+  // --- UI COMPONENTS ---
+  const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
+    <div onClick={onClick} className="glass-panel" style={{ 
+      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '20px', 
+      border: `1px solid ${color}`, background: `${color}10`, marginBottom: '15px', transition: '0.3s'
+    }}>
+      <div style={{ background: `${color}20`, padding: '12px', borderRadius: '10px' }}>
+        <Icon size={28} color={color}/>
+      </div>
+      <div style={{ textAlign: 'left' }}>
+        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>{title}</h3>
+        <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.6 }}>{subtitle}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-      <h2>React Nexus Chess</h2>
-      
-      {/* Controls */}
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-        <select value={mode} onChange={(e) => { setMode(e.target.value); resetGame(); }} style={{ padding: '8px', borderRadius: '4px' }}>
-          <option value="pvp">Local PvP (1v1)</option>
-          <option value="bot">Play vs Bot</option>
-        </select>
+    <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', minHeight: '700px', padding: '30px', margin: '0 auto' }}>
+      <h2 style={{ textAlign: 'center', background: 'linear-gradient(to right, #ffd700, #ff8c00)', WebkitBackgroundClip: 'text', color: 'transparent', fontSize: '2rem', fontWeight: '800' }}>
+        CHESS ARENA
+      </h2>
 
-        {mode === 'bot' && (
-          <select value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value))} style={{ padding: '8px', borderRadius: '4px' }}>
-            <option value={1}>Level 1 (Noob)</option>
-            <option value={2}>Level 2 (Easy)</option>
-            <option value={3}>Level 3 (Medium)</option>
-            <option value={4}>Level 4 (Hard)</option>
-            <option value={5}>Level 5 (Grandmaster)</option>
-          </select>
-        )}
-        <button onClick={resetGame} style={{ padding: '8px 16px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          New Game
-        </button>
-      </div>
+      {view === 'menu' && (
+        <div style={{ marginTop: '40px' }}>
+          <MenuCard icon={Bot} title="Vs Stockfish AI" subtitle="Train against the world's strongest bot" color="#ffd700" onClick={() => setView('game_ai')} />
+          <MenuCard icon={Users} title="Vs Friend" subtitle="Local 1v1 multiplayer" color="#00f3ff" onClick={() => setView('game_friend')} />
+          <MenuCard icon={Trophy} title="Leaderboard" subtitle="Climb the Grandmaster ranks" color="#bc13fe" onClick={fetchLeaderboard} />
+          <Link to="/" style={{ display: 'block', textAlign: 'center', color: '#666', marginTop: '20px', textDecoration: 'none' }}><ArrowLeft size={14}/> Back to Nexus</Link>
+        </div>
+      )}
 
-      {/* Leaderboard & Status */}
-      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginBottom: '20px', background: '#f8f9fa', padding: '15px', borderRadius: '8px' }}>
+      {(view === 'game_ai' || view === 'game_friend') && (
         <div>
-          <h3 style={{ margin: 0, color: '#d9534f' }}>{status}</h3>
-        </div>
-        <div style={{ textAlign: 'left' }}>
-          <strong style={{ display: 'block', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginBottom: '5px' }}>Leaderboard</strong>
-          <span style={{ fontSize: '14px' }}>PvP Matches Played: <strong>{leaderboard.pvpMatches}</strong></span><br/>
-          <span style={{ fontSize: '14px' }}>Bot Defeats (Player Wins): <strong>{leaderboard.botWins}</strong></span>
-        </div>
-      </div>
+           {/* Reusing your Profile Bar style */}
+           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+             {!user ? (
+               <button onClick={handleLogin} style={{ background: 'white', borderRadius: '20px', padding: '5px 15px', fontWeight: 'bold' }}>Login</button>
+             ) : (
+               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '5px 15px', borderRadius: '20px' }}>
+                 <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
+                    <div style={{ fontWeight: 'bold' }}>{user.displayName}</div>
+                    <div style={{ color: '#ffd700' }}>{stats.chessWins}W - {stats.chessLosses}L</div>
+                 </div>
+                 <img src={user.photoURL} style={{ width: 30, height: 30, borderRadius: '50%', border: '2px solid #ffd700' }} alt="user" />
+               </div>
+             )}
+           </div>
 
-      {/* Board */}
-      <div style={{ width: '400px', maxWidth: '100%', margin: '0 auto' }}>
-        <Chessboard position={game.fen()} onPieceDrop={onDrop} boardOrientation="white" />
-      </div>
+           <div style={{ width: '100%', marginBottom: '20px' }}>
+             <Chessboard position={game.fen()} onPieceDrop={onDrop} boardOrientation="white" />
+           </div>
+
+           <div style={{ display: 'flex', gap: '10px' }}>
+             <button className={styles.button} onClick={() => setView('menu')} style={{ flex: 1, background: '#333' }}>MENU</button>
+             <button className={styles.button} onClick={() => setGame(new Chess())} style={{ flex: 1, background: '#ffd700', color: 'black' }}>RESET</button>
+           </div>
+        </div>
+      )}
+
+      {/* Leaderboard View follows the same logic as your Tic-Tac-Toe file */}
     </div>
   );
 };
