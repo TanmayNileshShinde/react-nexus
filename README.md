@@ -1,196 +1,95 @@
-# React Nexus 🚀
+# 🚀 React Nexus
 
+**React Nexus** is a full-stack, web-based arcade hub featuring 8 custom-built mini-games. Built as a culmination of my Computer Engineering diploma studies, this platform combines retro gaming nostalgia with modern web architecture, including real-time global leaderboards and a custom "Glassmorphism" UI.
 
-**React Nexus** is a modern, scalable React application built with clean architecture and performance in mind. It serves as a structured foundation for building responsive, modular, and production-ready web applications.
-
----
-
-## 📋 Table of Contents
-
-- [About](#-about)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-- [Usage](#-usage)
-- [Folder Structure](#-folder-structure)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Contact](#-contact)
+**🌐 Live Demo:** [Play React Nexus Here](https://reactnexus.vercel.app)
 
 ---
 
-## 📖 About
+## 🎮 The Arcade
 
-React Nexus focuses on scalability, maintainability, and performance.  
-It leverages modern React features like functional components and hooks to deliver a seamless user experience while keeping the codebase clean and modular.
+React Nexus features 8 distinct games with seamless navigation:
 
----
-
-## ✨ Features
-
-- ⚛️ Modern React (Functional Components + Hooks)
-- 🎨 Fully Responsive Design
-- ⚡ Optimized Production Build
-- 🧩 Modular & Reusable Architecture
-- 🔌 API Integration Ready
-- 🛠 Clean and Organized Project Structure
+* 🏎️ **F1 Higher / Lower:** A custom trivia game challenging users to guess driver podium counts, complete with a live global "Hall of Fame" leaderboard.
+* 🏁 **F1 Memory Game:** Match pairs of Formula 1 drivers in a classic memory grid format.
+* 🐍 **Snake Arena:** A classic, retro-style snake survival game.
+* 🔢 **Neon 2048:** A glowing, stylized version of the classic sliding tile puzzle.
+* ⌨️ **Terminal Typer:** A coding speed test for developers.
+* ⚡ **Reaction Test:** Test your reflexes with a visual response challenge.
+* ❌ **Tic-Tac-Toe:** Classic competitive gameplay (Vs AI & PvP).
+* 🧮 **Math Blitz:** A rapid-fire math quiz challenge.
 
 ---
 
-## 🛠 Tech Stack
+## ✨ Key Features
 
-### Frontend
-- React
-- ReactDOM
-- React Router
-- CSS / Tailwind / SCSS (Update based on your setup)
+* **Global Leaderboards:** Real-time database reads/writes track user streaks and high scores for the F1 trivia game.
+* **Authentication:** Secure Google Sign-in integration via Firebase.
+* **Complex State Management:** Handles unique game logic, card-matching states, and victory conditions natively within React.
+* **Custom UI/UX:** Designed with a cohesive, dark-themed "Glassmorphism" interface utilizing `lucide-react` icons.
+* **Lightning Fast:** Bundled with Vite for instant server starts and optimized production builds.
 
-### Tooling
-- Create React App / Vite (Update based on your setup)
-- ESLint
-- Prettier
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React 19, Vite, React Router DOM
+* **Backend & Auth:** Firebase Authentication, Cloud Firestore
+* **Styling:** Custom CSS modules (Glassmorphism design)
+* **Icons:** Lucide React
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to run the project locally.
+Follow these steps to run the arcade locally.
 
 ### Prerequisites
-
-Make sure you have installed:
-
-- Node.js (v14 or higher)
-- npm (v6 or higher) or yarn
-
----
+* Node.js (v18 or higher recommended)
+* npm or yarn
 
 ### Installation
 
 1. Clone the repository
-
-```bash
-git clone https://github.com/TanmayNileshShinde/react-nexus.git
-cd react-nexus
-```
+   ```bash
+   git clone [https://github.com/TanmayNileshShinde/react-nexus.git(https://github.com/TanmayNileshShinde/react-nexus.git)
+   cd react-nexus
+   ```
 
 2. Install dependencies
-
-Using npm:
-
-```bash
-npm install
-```
-
-Or using yarn:
-
-```bash
-yarn install
-```
-
----
-
-### Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-REACT_APP_API_URL=http://localhost:5000/api
-```
-
-Add other variables as needed.
-
----
-
-## 💻 Usage
-
-### Start Development Server
-
-```bash
-npm start
-# or
-yarn start
-```
-
-The app will run at:
-
-```
-http://localhost:3000
-```
-
----
-
-### Build for Production
-
-```bash
-npm run build
-# or
-yarn build
-```
-
-Creates an optimized production build inside the `build/` folder.
-
----
-
-## 📂 Folder Structure
-
-```
-react-nexus/
-├── node_modules/
-├── public/
-│   ├── index.html
-│   └── favicon.ico
-├── src/
-│   ├── assets/         # Images, fonts, icons
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page-level components
-│   ├── hooks/          # Custom hooks
-│   ├── context/        # Global state management
-│   ├── utils/          # Utility/helper functions
-│   ├── App.js
-│   └── index.js
-├── .gitignore
-├── package.json
-├── README.md
-└── .env
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome.
-
-1. Fork the repository  
-2. Create a feature branch  
    ```bash
-   git checkout -b feature/AmazingFeature
+   npm install
    ```
-3. Commit your changes  
+      
+
+3. Set up Firebase Environment  
+Create a .env file in the root directory and add your Firebase configuration credentials:
    ```bash
-   git commit -m "Add AmazingFeature"
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   ``` 
+  (Note: You will need to update src/firebase.js to utilize these environment variables).
+    
+4. Start the Development Server
+
    ```
-4. Push to the branch  
-   ```bash
-   git push origin feature/AmazingFeature
+   npm run dev
    ```
-5. Open a Pull Request  
+The app will run at http://localhost:5173
 
 ---
 
-## 📄 License
-
-Distributed under the MIT License.  
-See the `LICENSE` file for more details.
+## 📂 Architecture Overview
+The application utilizes a flat routing structure managed by React Router. The main UI acts as a portal, loading individual game components on demand to keep the initial bundle size light. Firebase logic is centralized, allowing multiple games to tap into the same authentication state and Firestore collections without redundant code.
 
 ---
-
 ## 👤 Contact
+Tanmay Nilesh Shinde
 
-**Tanmay Nilesh Shinde**
+GitHub: https://github.com/TanmayNileshShinde
 
-GitHub: https://github.com/TanmayNileshShinde  
-Project Link: https://github.com/TanmayNileshShinde/react-nexus
+LinkedIn: https://www.linkedin.com/in/tanmay-shinde-9b07753bb
