@@ -1,5 +1,12 @@
 # 🚀 React Nexus
 
+<p align="left">
+  <a href="https://reactnexus.vercel.app"><img src="https://img.shields.io/badge/Live_Arcade-reactnexus.vercel.app-61DAFB?style=for-the-badge&logo=vercel&logoColor=black" alt="Live Demo" /></a>
+  <a href="https://github.com/TanmayNileshShinde/react-nexus/stargazers"><img src="https://img.shields.io/github/stars/TanmayNileshShinde/react-nexus?style=for-the-badge&logo=github&color=ffb86c" alt="Stars" /></a>
+  <a href="https://github.com/TanmayNileshShinde/react-nexus/network/members"><img src="https://img.shields.io/github/forks/TanmayNileshShinde/react-nexus?style=for-the-badge&logo=github&color=8be9fd" alt="Forks" /></a>
+  <a href="./SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy-2ea44f?style=for-the-badge&logo=shield" alt="Security Policy" /></a>
+</p>
+
 **React Nexus** is a full-stack, web-based arcade hub featuring 8 custom-built mini-games. Built as a culmination of my Computer Engineering diploma studies, this platform combines retro gaming nostalgia with modern web architecture, including real-time global leaderboards and a custom "Glassmorphism" UI.
 
 **🌐 Live Demo:** [Play React Nexus Here](https://reactnexus.vercel.app)
