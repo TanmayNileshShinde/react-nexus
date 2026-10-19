@@ -149,6 +149,13 @@ const MemoryGame = () => {
     }
   };
 
+  const updateStats = async () => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, { f1_wins: increment(1), f1_matches: increment(1) });
+    setStats(prev => ({ ...prev, f1_wins: prev.f1_wins + 1 }));
+  };
+
   // Check Win Condition
   useEffect(() => {
     if (gameState === 'playing' && cards.length > 0 && solved.length === cards.length) {
@@ -156,13 +163,6 @@ const MemoryGame = () => {
       if (user) updateStats();
     }
   }, [solved]);
-
-  const updateStats = async () => {
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, { f1_wins: increment(1), f1_matches: increment(1) });
-    setStats(prev => ({ ...prev, f1_wins: prev.f1_wins + 1 }));
-  };
 
   // --- RENDER ---
   return (
