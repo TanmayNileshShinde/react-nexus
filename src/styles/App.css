@@ -352,3 +352,113 @@ a {
     min-height: 130px;
   }
 }
+
+/* Floating Master Audio Controller */
+.arcade-audio-controller {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arcade-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 14px rgba(0, 243, 255, 0.1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.arcade-audio-btn:hover {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(0, 243, 255, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 243, 255, 0.25);
+}
+
+.arcade-audio-btn.muted {
+  border-color: rgba(255, 71, 87, 0.4);
+  color: #ff4757;
+}
+
+.arcade-audio-btn.muted:hover {
+  border-color: rgba(255, 71, 87, 0.8);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 71, 87, 0.3);
+}
+
+.audio-key-hint {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 0.68rem;
+  font-family: monospace;
+  font-weight: 700;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #00f3ff;
+  margin-left: 2px;
+}
+
+.arcade-audio-btn.muted .audio-key-hint {
+  color: #ff4757;
+  border-color: rgba(255, 71, 87, 0.3);
+}
+
+.arcade-volume-popover {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: fadeInAudio 0.18s ease-out;
+}
+
+.arcade-volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 70px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.arcade-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #00f3ff;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 243, 255, 0.8);
+}
+
+.arcade-volume-percent {
+  font-size: 0.72rem;
+  font-family: monospace;
+  color: var(--text-muted);
+  min-width: 28px;
+}
+
+@keyframes fadeInAudio {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

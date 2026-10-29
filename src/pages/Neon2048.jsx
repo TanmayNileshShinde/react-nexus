@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Grid, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import sound from '../utils/audioFX';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
@@ -165,6 +166,7 @@ const Neon2048 = () => {
     }
 
     if (changed) {
+      if (pointsEarned > 0) sound.playMerge(); else sound.playMove();
       newBoard = spawnRandomTile(newBoard);
       setBoard(newBoard);
       setScore(s => s + pointsEarned);

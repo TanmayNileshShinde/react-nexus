@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, User, Bot, Users } from 'lucide-react';
 import styles from '../styles/Game.module.css';
+import sound from '../utils/audioFX';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
@@ -169,6 +170,7 @@ const TicTacToe = () => {
   }, [winner, isDraw]);
 
   const updateStats = async (isWin, isDrawGame) => {
+    if (isWin) sound.playVictory(); else if (isDrawGame) sound.playClick(); else sound.playGameOver();
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     
@@ -192,6 +194,7 @@ const TicTacToe = () => {
   const makeMove = (index) => {
     if (board[index] || winner || isDraw) return;
     const newBoard = [...board];
+    sound.playMove();
     newBoard[index] = isXNext ? 'X' : 'O';
     setBoard(newBoard);
     setIsXNext(!isXNext);
@@ -203,6 +206,7 @@ const TicTacToe = () => {
   };
 
   const resetGame = () => {
+    sound.playClick();
     setBoard(Array(9).fill(null));
     setIsXNext(true);
   };

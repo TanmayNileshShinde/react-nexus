@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from '../styles/Game.module.css';
+import sound from '../utils/audioFX';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
@@ -80,6 +81,7 @@ const SnakeGame = () => {
   }, []);
 
   const resetGame = () => {
+    sound.playClick();
     setSnake(INITIAL_SNAKE);
     setDir(INITIAL_DIRECTION);
     dirRef.current = INITIAL_DIRECTION;
@@ -89,6 +91,7 @@ const SnakeGame = () => {
   };
 
   const gameOver = async () => {
+    sound.playGameOver();
     setIsGameOver(true);
     if (!user) return;
 
@@ -129,6 +132,7 @@ const SnakeGame = () => {
         const newSnake = [newHead, ...prev];
 
         if (newHead.x === food.x && newHead.y === food.y) {
+          sound.playScore();
           setScore(s => s + 10);
           setFood(generateFood(newSnake));
         } else {
@@ -148,6 +152,7 @@ const SnakeGame = () => {
     const current = dirRef.current;
     if (x !== 0 && current.x === -x) return;
     if (y !== 0 && current.y === -y) return;
+    sound.playMove();
     dirRef.current = { x, y };
   };
 

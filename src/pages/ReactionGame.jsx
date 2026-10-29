@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Zap, AlertCircle, RotateCcw, Home } from 'lucide-react';
 import styles from '../styles/Game.module.css';
+import sound from '../utils/audioFX';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
@@ -42,11 +43,12 @@ const ReactionGame = () => {
     setLights(0);
     setResultTime(null);
     for (let i = 1; i <= 5; i++) {
-      setTimeout(() => { setLights(i); }, i * 1000);
+      setTimeout(() => { setLights(i); sound.playTick(); }, i * 1000);
     }
     const randomDelay = Math.floor(Math.random() * 3000) + 2000;
     timerRef.current = setTimeout(() => {
       setLights(0);
+      sound.playGo();
       setGameState('ready');
       setStartTime(performance.now());
     }, 5000 + randomDelay);
@@ -55,11 +57,13 @@ const ReactionGame = () => {
   const handleReaction = () => {
     if (gameState === 'counting') {
       clearTimeout(timerRef.current);
+      sound.playFoul();
       setGameState('foul');
       setLights(5);
     } else if (gameState === 'ready') {
       const reaction = Math.round(performance.now() - startTime);
       setResultTime(reaction);
+      sound.playVictory();
       setGameState('result');
       processScore(reaction);
     }
