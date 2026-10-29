@@ -10,6 +10,8 @@ import SnakeGame from './pages/SnakeGame';
 import TypingMaster from './pages/TypingMaster';
 import F1HigherLower from './pages/F1HigherLower';
 import Neon2048 from './pages/Neon2048';
+import { SoundProvider } from './context/SoundContext';
+import AudioController from './components/AudioController';
 
 import './styles/App.css';
 
@@ -30,20 +32,23 @@ function FloatingHubNav() {
 
 function App() {
   return (
-    <Router>
-      <FloatingHubNav />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/game" element={<TicTacToe />} />
-        <Route path="/memory" element={<MemoryGame />} />
-        <Route path="/reaction" element={<ReactionGame />} />
-        <Route path="/chess" element={<ChessGame />} />
-        <Route path="/snake" element={<SnakeGame />} />
-        <Route path="/f1" element={<F1HigherLower />} />
-        <Route path="/type" element={<TypingMaster />} />
-        <Route path="/2048" element={<Neon2048 />} />
-      </Routes>
-    </Router>
+    <SoundProvider>
+      <Router>
+        <FloatingHubNav />
+        <AudioController />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/game" element={<TicTacToe />} />
+          <Route path="/memory" element={<MemoryGame />} />
+          <Route path="/reaction" element={<ReactionGame />} />
+          <Route path="/chess" element={<ChessGame />} />
+          <Route path="/snake" element={<SnakeGame />} />
+          <Route path="/f1" element={<F1HigherLower />} />
+          <Route path="/type" element={<TypingMaster />} />
+          <Route path="/2048" element={<Neon2048 />} />
+        </Routes>
+      </Router>
+    </SoundProvider>
   );
 }
 
