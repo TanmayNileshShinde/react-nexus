@@ -1,13 +1,13 @@
 /**
  * Retro Web Audio Synthesizer Engine for React Nexus
- * Zero-dependency procedural 8-bit sound effects using Web Audio API
+ * Zero-dependency procedural 8-bit chiptune sound effects using Web Audio API
  */
 
 class SoundEngine {
   constructor() {
     this.ctx = null;
-    this.muted = localStorage.getItem('react-nexus-muted') === 'true';
-    this.volume = parseFloat(localStorage.getItem('react-nexus-volume') || '0.35');
+    this.muted = typeof window !== 'undefined' ? localStorage.getItem('react-nexus-muted') === 'true' : false;
+    this.volume = typeof window !== 'undefined' ? parseFloat(localStorage.getItem('react-nexus-volume') || '0.35') : 0.35;
     this.listeners = new Set();
   }
 
@@ -34,7 +34,9 @@ class SoundEngine {
 
   setMuted(isMuted) {
     this.muted = isMuted;
-    localStorage.setItem('react-nexus-muted', String(isMuted));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('react-nexus-muted', String(isMuted));
+    }
     this.notify();
   }
 
@@ -45,7 +47,9 @@ class SoundEngine {
 
   setVolume(vol) {
     this.volume = Math.max(0, Math.min(1, vol));
-    localStorage.setItem('react-nexus-volume', String(this.volume));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('react-nexus-volume', String(this.volume));
+    }
     if (this.volume > 0 && this.muted) {
       this.setMuted(false);
     }
@@ -55,7 +59,7 @@ class SoundEngine {
   /**
    * Core procedural oscillator node with ADSR-like envelope
    */
-  tone(frequency, type = 'square', duration = 0.1, startFreq = null, endFreq = null) {
+  tone(frequency, type = 'square', duration = 0.1, startFreq = null, endFreq = null, gainMult = 0.4) {
     if (this.muted || this.volume <= 0) return;
     try {
       this.init();
@@ -74,7 +78,7 @@ class SoundEngine {
       }
 
       // Gain envelope
-      const maxGain = this.volume * 0.4;
+      const maxGain = this.volume * gainMult;
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(maxGain, now + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
@@ -84,8 +88,47 @@ class SoundEngine {
 
       osc.start(now);
       osc.stop(now + duration + 0.05);
-    } catch {
+    } catch (_err) {
       // Audio context might be restricted before interaction
+    }
+  }
+
+  /**
+   * Procedural white-noise synthesizer with lowpass filter
+   * Used for retro explosions, crashes, and collision hits.
+   */
+  playNoise(duration = 0.15, maxGain = 0.25) {
+    if (this.muted || this.volume <= 0) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = this.ctx.createBufferSource();
+      whiteNoise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + duration);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(this.volume * maxGain, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      whiteNoise.start();
+    } catch (_err) {
+      // Audio context might be restricted
     }
   }
 
@@ -99,6 +142,20 @@ class SoundEngine {
   /** Move cursor, change direction, place tile */
   playMove() {
     this.tone(340, 'square', 0.06, 280, 420);
+  }
+
+  /** Retro Laser / Ray sound */
+  playLaser() {
+    this.tone(880, 'sawtooth', 0.12, 900, 120);
+  }
+
+  /** Power up ascending chime */
+  playPowerUp() {
+    if (this.muted || this.volume <= 0) return;
+    const notes = [330, 392, 494, 659];
+    notes.forEach((freq, idx) => {
+      setTimeout(() => this.tone(freq, 'square', 0.08), idx * 60);
+    });
   }
 
   /** Eat food, score points, collect item */
@@ -124,7 +181,9 @@ class SoundEngine {
         osc.start(now + t);
         osc.stop(now + t + 0.13);
       });
-    } catch {}
+    } catch (_err) {
+      // Audio unlock error ignored
+    }
   }
 
   /** Tile merge / combo effect */
@@ -147,9 +206,15 @@ class SoundEngine {
     this.tone(140, 'sawtooth', 0.28, 160, 110);
   }
 
+  /** Classic 8-bit collision / crash effect */
+  playCollision() {
+    this.playNoise(0.2, 0.3);
+  }
+
   /** Classic game over sweep */
   playGameOver() {
     if (this.muted || this.volume <= 0) return;
+    this.playNoise(0.18, 0.25);
     try {
       this.init();
       if (!this.ctx) return;
@@ -171,7 +236,9 @@ class SoundEngine {
         osc.start(now + t);
         osc.stop(now + t + 0.19);
       });
-    } catch {}
+    } catch (_err) {
+      // Audio unlock error ignored
+    }
   }
 
   /** Grand victory fanfare */
@@ -198,7 +265,9 @@ class SoundEngine {
         osc.start(now + t);
         osc.stop(now + t + d + 0.05);
       });
-    } catch {}
+    } catch (_err) {
+      // Audio unlock error ignored
+    }
   }
 }
 
