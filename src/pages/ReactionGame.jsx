@@ -1,5 +1,5 @@
 // src/pages/ReactionGame.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Zap, AlertCircle, RotateCcw, Home } from 'lucide-react';
 import styles from '../styles/Game.module.css';
@@ -43,7 +43,13 @@ const ReactionGame = () => {
     setLights(0);
     setResultTime(null);
     for (let i = 1; i <= 5; i++) {
-      setTimeout(() => { setLights(i); sound.playTick(); }, i * 1000);
+      setTimeout(() => { 
+        setLights(i); 
+        sound.playTick(); 
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          try { navigator.vibrate(10); } catch { /* ignore */ }
+        }
+      }, i * 1000);
     }
     const randomDelay = Math.floor(Math.random() * 3000) + 2000;
     timerRef.current = setTimeout(() => {

@@ -166,7 +166,14 @@ const Neon2048 = () => {
     }
 
     if (changed) {
-      if (pointsEarned > 0) sound.playMerge(); else sound.playMove();
+      if (pointsEarned > 0) {
+        sound.playMerge();
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          try { navigator.vibrate(25); } catch { /* ignore */ }
+        }
+      } else {
+        sound.playMove();
+      }
       newBoard = spawnRandomTile(newBoard);
       setBoard(newBoard);
       setScore(s => s + pointsEarned);
