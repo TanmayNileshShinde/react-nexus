@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 
 // FIREBASE IMPORTS
