@@ -15,7 +15,7 @@ const ChessGame = () => {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
   const [game, setGame] = useState(new Chess());
-  const [difficulty, setDifficulty] = useState(2); 
+  const [difficulty] = useState(2); 
   const [stats, setStats] = useState({ chessWins: 0, chessLosses: 0, chessMatches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +92,7 @@ const ChessGame = () => {
         }
         return result;
       }
-    } catch (e) { return null; }
+    } catch (_err) { return null; }
     return null;
   };
 

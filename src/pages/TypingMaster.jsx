@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Keyboard, Terminal } from 'lucide-react';
-import styles from '../styles/Game.module.css';
 
 // FIREBASE IMPORTS
 import { auth, googleProvider, db } from '../firebase';
@@ -128,7 +127,7 @@ const TypingMaster = () => {
     }
   };
 
-  const finishGame = async (finalInput, correctChars) => {
+  const finishGame = async (finalInput, _correctChars) => {
     setIsFinished(true);
     const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
     

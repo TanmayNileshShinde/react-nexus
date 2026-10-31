@@ -124,7 +124,7 @@ class SoundEngine {
         osc.start(now + t);
         osc.stop(now + t + 0.13);
       });
-    } catch {}
+    } catch (_err) { /* ignore */ }
   }
 
   /** Tile merge / combo effect */
@@ -171,7 +171,7 @@ class SoundEngine {
         osc.start(now + t);
         osc.stop(now + t + 0.19);
       });
-    } catch {}
+    } catch (_err) { /* ignore */ }
   }
 
   /** Grand victory fanfare */
@@ -198,7 +198,7 @@ class SoundEngine {
         osc.start(now + t);
         osc.stop(now + t + d + 0.05);
       });
-    } catch {}
+    } catch (_err) { /* ignore */ }
   }
 }
 
