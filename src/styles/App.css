@@ -462,3 +462,90 @@ a {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* Virtual Mobile D-Pad Controller */
+.arcade-dpad-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.arcade-dpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 243, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 0 16px rgba(0, 243, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.dpad-btn {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(0, 243, 255, 0.3);
+  color: #00f3ff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 8px rgba(0, 243, 255, 0.15);
+  transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dpad-btn:active {
+  background: rgba(0, 243, 255, 0.3);
+  color: #ffffff;
+  transform: scale(0.92);
+  box-shadow: 0 0 16px rgba(0, 243, 255, 0.6);
+  border-color: #00f3ff;
+}
+
+.dpad-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dpad-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-center-hub {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dpad-hub-core {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(0, 243, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+}
+
+.dpad-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-down {
+  grid-column: 2;
+  grid-row: 3;
+}

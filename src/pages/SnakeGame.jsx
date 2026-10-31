@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Play } from 'lucide-react';
+import MobileDPad from '../components/MobileDPad';
 import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 
@@ -29,6 +30,33 @@ const SnakeGame = () => {
   const [score, setScore] = useState(0);
 
   const dirRef = useRef(dir);
+  const touchStartRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartRef.current || view !== 'game' || isGameOver) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    const minSwipeDistance = 25;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (Math.abs(dx) >= minSwipeDistance) {
+        if (dx > 0) handleDirChange(1, 0);
+        else handleDirChange(-1, 0);
+      }
+    } else {
+      if (Math.abs(dy) >= minSwipeDistance) {
+        if (dy > 0) handleDirChange(0, 1);
+        else handleDirChange(0, -1);
+      }
+    }
+  };
   
   // --- 1. AUTH & DATA SYNC ---
   const handleLogin = async () => {
@@ -282,6 +310,15 @@ const SnakeGame = () => {
               </div>
             )}
           </div>
+
+          {/* Virtual Mobile D-Pad */}
+          <MobileDPad
+            onUp={() => handleDirChange(0, -1)}
+            onDown={() => handleDirChange(0, 1)}
+            onLeft={() => handleDirChange(-1, 0)}
+            onRight={() => handleDirChange(1, 0)}
+            disabled={isGameOver}
+          />
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '20px', marginTop: '40px', width: '100%', maxWidth: '600px' }}>
