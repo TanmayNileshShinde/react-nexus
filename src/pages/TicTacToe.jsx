@@ -5,13 +5,13 @@ import { ArrowLeft, RefreshCw, Trophy, User, Bot, Users } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 const TicTacToe = () => {
-  // --- STATES ---
+  // state
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); // 'menu', 'game_ai', 'game_friend', 'leaderboard'
   const [board, setBoard] = useState(Array(9).fill(null));
@@ -25,7 +25,7 @@ const TicTacToe = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- 1. AUTHENTICATION & DATA SYNC ---
+  // auth
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -59,7 +59,7 @@ const TicTacToe = () => {
     }
   };
 
-  // --- 2. LEADERBOARD FETCHER ---
+  // leaderboard
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -211,7 +211,7 @@ const TicTacToe = () => {
     setIsXNext(true);
   };
 
-  // --- UI COMPONENTS ---
+  // ui components
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '25px', 

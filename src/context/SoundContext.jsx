@@ -20,7 +20,7 @@ export const SoundProvider = ({ children }) => {
     });
 
     const handleKeyDown = (e) => {
-      // Ignore if user is currently typing in an input or textarea
+      // input check
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable) {
         return;
       }

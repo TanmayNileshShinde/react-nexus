@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Grid, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import sound from '../utils/audioFX';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';

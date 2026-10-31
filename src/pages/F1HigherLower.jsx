@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, ChevronUp, ChevronDown, Flag } from 'lucide-react';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
-// --- F1 DRIVER DATABASE (UPDATED TO PODIUMS FOR 2026) ---
+// driver data
 const f1Data = [
   { id: 1, name: 'Albon', color: '#005AFF', img: '/drivers/albon.webp', podiums: 2 },
   { id: 2, name: 'Alonso', color: '#006F62', img: '/drivers/alonso.webp', podiums: 106 },

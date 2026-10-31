@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -39,7 +39,7 @@ const ALL_DRIVERS = [
 ];
 
 const MemoryGame = () => {
-  // --- STATES ---
+  // state
   const [user, setUser] = useState(null);
   const [view, setView] = useState('game'); 
   const [cards, setCards] = useState([]);
@@ -74,7 +74,7 @@ const MemoryGame = () => {
 
   useEffect(() => { shuffleCards(); }, []);
 
-  // --- 2. AUTHENTICATION ---
+  // auth
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);

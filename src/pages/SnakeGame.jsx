@@ -4,7 +4,7 @@ import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft
 import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -14,14 +14,14 @@ const INITIAL_SNAKE = [{ x: 12, y: 12 }];
 const INITIAL_DIRECTION = { x: 0, y: -1 }; 
 
 const SnakeGame = () => {
-  // --- STATES ---
+  // state
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
   const [stats, setStats] = useState({ snakeHighScore: 0, snakeMatches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Game States
+  // state
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [food, setFood] = useState({ x: 5, y: 5 });
   const [dir, setDir] = useState(INITIAL_DIRECTION);
@@ -57,7 +57,7 @@ const SnakeGame = () => {
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- 2. LEADERBOARD FETCHER ---
+  // leaderboard
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -69,7 +69,7 @@ const SnakeGame = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- 3. GAME ENGINE ---
+  // game loop
   const generateFood = useCallback((currentSnake) => {
     let newFood;
     while (true) {
@@ -110,7 +110,7 @@ const SnakeGame = () => {
     });
   };
 
-  // Game Loop
+  // game loop
   useEffect(() => {
     if (view !== 'game' || isGameOver) return;
 
@@ -156,7 +156,7 @@ const SnakeGame = () => {
     dirRef.current = { x, y };
   };
 
-  // Keyboard Controls
+  // keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
@@ -174,7 +174,7 @@ const SnakeGame = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [view, isGameOver]);
 
-  // --- UI COMPONENTS ---
+  // ui components
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '30px', 

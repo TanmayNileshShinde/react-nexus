@@ -89,7 +89,7 @@ class SoundEngine {
     }
   }
 
-  // --- Sound Effects Palette ---
+  // sfx palette
 
   /** Soft UI click / tap */
   playClick() {

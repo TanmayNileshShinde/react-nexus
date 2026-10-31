@@ -5,7 +5,7 @@ import { ArrowLeft, Trophy, Zap, AlertCircle, RotateCcw, Home } from 'lucide-rea
 import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';

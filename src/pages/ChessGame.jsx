@@ -5,13 +5,13 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import styles from '../styles/Game.module.css';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 const ChessGame = () => {
-  // --- STATES ---
+  // state
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
   const [game, setGame] = useState(new Chess());
@@ -22,7 +22,7 @@ const ChessGame = () => {
   
   const engine = useRef(null);
 
-  // --- 1. STOCKFISH AI SETUP ---
+  // stockfish engine
   useEffect(() => {
     engine.current = new Worker('/stockfish.js');
     engine.current.onmessage = (e) => {
@@ -60,7 +60,7 @@ const ChessGame = () => {
     }
   };
 
-  // --- 3. LEADERBOARD FETCHER ---
+  // leaderboard
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -128,7 +128,7 @@ const ChessGame = () => {
     return true;
   };
 
-  // --- UI COMPONENTS ---
+  // ui components
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '25px', 

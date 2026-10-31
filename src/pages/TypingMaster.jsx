@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Keyboard, Terminal } from 'lucide-react';
 import styles from '../styles/Game.module.css';
 
-// FIREBASE IMPORTS
+// firebase
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -37,14 +37,14 @@ const codeSnippets = [
 ];
 
 const TypingMaster = () => {
-  // --- STATES ---
+  // state
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
   const [stats, setStats] = useState({ typingWPM: 0, typingMatches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Game States
+  // state
   const [snippet, setSnippet] = useState("");
   const [userInput, setUserInput] = useState("");
   const [startTime, setStartTime] = useState(null);
@@ -81,7 +81,7 @@ const TypingMaster = () => {
     } catch (error) { console.error("Login failed", error); }
   };
 
-  // --- 2. LEADERBOARD FETCHER ---
+  // leaderboard
   const fetchLeaderboard = async () => {
     setView('leaderboard');
     setIsLoading(true);
@@ -93,7 +93,7 @@ const TypingMaster = () => {
     finally { setIsLoading(false); }
   };
 
-  // --- 3. GAME ENGINE ---
+  // game loop
   const resetGame = () => {
     const randomSnippet = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
     setSnippet(randomSnippet);
@@ -154,7 +154,7 @@ const TypingMaster = () => {
     });
   };
 
-  // --- UI COMPONENTS ---
+  // ui components
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
     <div onClick={onClick} className="glass-panel" style={{ 
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '30px', 
