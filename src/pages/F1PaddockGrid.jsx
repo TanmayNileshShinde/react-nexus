@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  Grid,
-  Search,
-  Trophy,
   RotateCcw,
   Share2,
   HelpCircle,
@@ -13,7 +10,7 @@ import {
   Calendar,
   Sparkles,
   AlertCircle,
-  ChevronRight,
+  Search,
 } from 'lucide-react';
 import PaddockNav from '../components/PaddockNav';
 import {
@@ -25,31 +22,29 @@ import {
   generateGridShareText,
 } from '../utils/f1PaddockData';
 import { useSound } from '../context/SoundContext';
+import '../styles/paddockdle.css';
 
 const MAX_GUESSES = 9;
 
 const F1PaddockGrid = () => {
   const { sound } = useSound();
 
-  // Mode: 'daily' or 'freeplay'
   const [mode, setMode] = useState('daily');
   const [activeGrid, setActiveGrid] = useState(() => getDailyGrid());
   const [solvedCells, setSolvedCells] = useState({});
   const [guessesLeft, setGuessesLeft] = useState(MAX_GUESSES);
   const [usedDriverIds, setUsedDriverIds] = useState(new Set());
 
-  // Modal / selector state
   const [selectedCell, setSelectedCell] = useState(null); // { r, c }
   const [searchQuery, setSearchQuery] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState(null); // { type: 'success'|'error', text }
+  const [feedback, setFeedback] = useState(null);
 
   const searchInputRef = useRef(null);
 
-  // Persistent stats
   const [stats, setStats] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_f1_grid_stats');
@@ -61,7 +56,6 @@ const F1PaddockGrid = () => {
     }
   });
 
-  // Load saved state for daily
   useEffect(() => {
     if (mode === 'daily') {
       const todayKey = `nexus_f1_grid_daily_${new Date().toISOString().slice(0, 10)}`;
@@ -80,7 +74,6 @@ const F1PaddockGrid = () => {
     }
   }, [mode]);
 
-  // Focus search input when cell modal opens
   useEffect(() => {
     if (selectedCell && searchInputRef.current) {
       setTimeout(() => {
@@ -89,11 +82,9 @@ const F1PaddockGrid = () => {
     }
   }, [selectedCell]);
 
-  // Filter available drivers for picker
   const filteredDrivers = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return F1_DRIVERS.filter((d) => {
-      // Exclude already picked drivers
       if (usedDriverIds.has(d.id)) return false;
       if (!q) return true;
       return (
@@ -110,7 +101,7 @@ const F1PaddockGrid = () => {
   const handleCellClick = (r, c) => {
     if (isGameOver) return;
     const key = `${r}-${c}`;
-    if (solvedCells[key]) return; // Already solved
+    if (solvedCells[key]) return;
     if (guessesLeft <= 0) return;
 
     sound?.playMove?.();
@@ -135,17 +126,14 @@ const F1PaddockGrid = () => {
 
     if (isValid) {
       sound?.playSuccess?.();
-      const updatedCells = {
-        ...solvedCells,
-        [cellKey]: driver,
-      };
+      const updatedCells = { ...solvedCells, [cellKey]: driver };
       const updatedUsedIds = new Set(usedDriverIds).add(driver.id);
       setSolvedCells(updatedCells);
       setUsedDriverIds(updatedUsedIds);
 
       setFeedback({
         type: 'success',
-        text: `Correct! ${driver.name} fits ${rowCategory.label} & ${colCategory.label}!`,
+        text: `Match! ${driver.name} satisfies ${rowCategory.label} & ${colCategory.label}!`,
       });
 
       const newSolvedCount = Object.keys(updatedCells).length;
@@ -156,7 +144,6 @@ const F1PaddockGrid = () => {
         updateEndStats(newSolvedCount === 9, newSolvedCount);
       }
 
-      // Save daily state
       if (mode === 'daily') {
         const todayKey = `nexus_f1_grid_daily_${new Date().toISOString().slice(0, 10)}`;
         localStorage.setItem(
@@ -170,7 +157,6 @@ const F1PaddockGrid = () => {
         );
       }
 
-      // Close modal after brief flash
       setTimeout(() => {
         setSelectedCell(null);
         setFeedback(null);
@@ -179,7 +165,7 @@ const F1PaddockGrid = () => {
       sound?.playGameOver?.();
       setFeedback({
         type: 'error',
-        text: `Miss! ${driver.name} did not match both ${rowCategory.label} and ${colCategory.label}.`,
+        text: `Miss! ${driver.name} did not match both criteria.`,
       });
 
       if (newGuessesLeft <= 0) {
@@ -251,333 +237,271 @@ const F1PaddockGrid = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-white flex flex-col items-center px-3 sm:px-6 py-6 font-sans">
+    <div className="paddock-container">
       <PaddockNav activeTab="grid" />
 
-      {/* Main Wrapper */}
-      <div className="w-full max-w-4xl flex flex-col items-center">
-        {/* Subheader & Controls */}
-        <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-6 bg-white/[0.03] border border-white/10 p-3 sm:p-4 rounded-2xl backdrop-blur-md">
-          {/* Mode Switcher */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (mode !== 'daily') {
-                  setMode('daily');
-                  setActiveGrid(getDailyGrid());
-                  setSolvedCells({});
-                  setGuessesLeft(MAX_GUESSES);
-                  setUsedDriverIds(new Set());
-                  setIsGameOver(false);
-                }
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                mode === 'daily'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                  : 'bg-white/5 text-white/60 hover:text-white'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Daily Grid</span>
+      {/* Hero Title */}
+      <div className="paddock-hero">
+        <h1>
+          <span>PADDOCK</span>
+          <span className="brand-red">GRID</span>
+        </h1>
+        <p>3×3 Formula 1 Immaculate Grid Puzzle</p>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="paddock-controls-bar">
+        <div className="paddock-mode-toggle">
+          <button
+            onClick={() => {
+              if (mode !== 'daily') {
+                sound?.playMove?.();
+                setMode('daily');
+                setActiveGrid(getDailyGrid());
+                setSolvedCells({});
+                setGuessesLeft(MAX_GUESSES);
+                setUsedDriverIds(new Set());
+                setIsGameOver(false);
+              }
+            }}
+            className={`paddock-pill-btn ${mode === 'daily' ? 'active' : ''}`}
+          >
+            <Calendar size={13} />
+            <span>Daily Grid</span>
+          </button>
+          <button
+            onClick={() => {
+              if (mode !== 'freeplay') {
+                sound?.playMove?.();
+                setMode('freeplay');
+                handleResetGame();
+              }
+            }}
+            className={`paddock-pill-btn ${mode === 'freeplay' ? 'active' : ''}`}
+          >
+            <Sparkles size={13} />
+            <span>Unlimited Practice</span>
+          </button>
+        </div>
+
+        {/* Guesses status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+          <div>
+            Solved: <strong style={{ color: '#34d399' }}>{solvedCount}/9</strong>
+          </div>
+          <div>
+            Guesses: <strong style={{ color: guessesLeft <= 2 ? '#ff4757' : '#ffd700' }}>{guessesLeft} left</strong>
+          </div>
+        </div>
+
+        <div className="paddock-actions">
+          {mode === 'freeplay' && (
+            <button onClick={handleResetGame} className="paddock-icon-btn" title="New Grid">
+              <RotateCcw size={14} />
             </button>
-            <button
-              onClick={() => {
-                if (mode !== 'freeplay') {
-                  setMode('freeplay');
-                  handleResetGame();
-                }
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                mode === 'freeplay'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                  : 'bg-white/5 text-white/60 hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Practice / Unlimited</span>
+          )}
+          <button onClick={() => setShowHelp(true)} className="paddock-icon-btn" title="How to play">
+            <HelpCircle size={14} />
+          </button>
+          <button onClick={() => setShowStats(true)} className="paddock-icon-btn" title="View Stats">
+            <BarChart2 size={14} />
+          </button>
+          {(isGameOver || solvedCount > 0) && (
+            <button onClick={handleShare} className="paddock-share-btn">
+              <Share2 size={13} />
+              <span>{copied ? 'Copied!' : 'Share'}</span>
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* 3x3 Grid Board */}
+      <div className="paddock-grid-card">
+        <div className="paddock-grid-matrix">
+          {/* Top-left corner */}
+          <div className="paddock-grid-header">
+            <Flame size={20} color="#e10600" />
+            <span className="header-tag">3×3 GRID</span>
           </div>
 
-          {/* Guesses & Solved Counter */}
-          <div className="flex items-center gap-4 text-xs sm:text-sm font-mono">
-            <div className="flex items-center gap-1.5">
-              <span className="text-white/50">Solved:</span>
-              <span className="font-bold text-emerald-400">
-                {solvedCount}/9
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-white/50">Guesses:</span>
-              <span
-                className={`font-bold ${
-                  guessesLeft <= 2 ? 'text-red-400 animate-pulse' : 'text-yellow-400'
-                }`}
+          {/* Column Headers */}
+          {activeGrid.cols.map((colKey, colIdx) => {
+            const cat = GRID_CATEGORIES[colKey];
+            return (
+              <div
+                key={`col-${colIdx}`}
+                className="paddock-grid-header"
+                style={{ borderTop: `3px solid ${cat.color}` }}
               >
-                {guessesLeft} left
-              </span>
-            </div>
-          </div>
+                <span className="header-tag">COL {colIdx + 1}</span>
+                <span className="header-label">{cat.label}</span>
+              </div>
+            );
+          })}
 
-          {/* Action Icons */}
-          <div className="flex items-center gap-2">
+          {/* Rows & Cells */}
+          {activeGrid.rows.map((rowKey, rowIdx) => {
+            const rowCat = GRID_CATEGORIES[rowKey];
+            return (
+              <React.Fragment key={`row-${rowIdx}`}>
+                {/* Row Header */}
+                <div
+                  className="paddock-grid-header"
+                  style={{ borderLeft: `3px solid ${rowCat.color}` }}
+                >
+                  <span className="header-tag">ROW {rowIdx + 1}</span>
+                  <span className="header-label">{rowCat.label}</span>
+                </div>
+
+                {/* 3 Cells */}
+                {[0, 1, 2].map((colIdx) => {
+                  const cellKey = `${rowIdx}-${colIdx}`;
+                  const driver = solvedCells[cellKey];
+
+                  return (
+                    <button
+                      key={cellKey}
+                      onClick={() => handleCellClick(rowIdx, colIdx)}
+                      disabled={!!driver || isGameOver}
+                      className={`paddock-grid-cell ${driver ? 'solved' : ''}`}
+                    >
+                      {driver ? (
+                        <>
+                          <span style={{ fontSize: '1.4rem' }}>{driver.flag}</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#6ee7b7' }}>
+                            {driver.name}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', opacity: 0.8 }}>
+                            #{driver.number} • {driver.code}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
+                          <span style={{ fontSize: '0.65rem', fontFamily: 'monospace' }}>SELECT</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Game Over Banner */}
+      {isGameOver && (
+        <div className="paddock-banner">
+          <Trophy size={36} color="#ffd700" style={{ margin: '0 auto 8px', display: 'block' }} />
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 6px' }}>
+            {solvedCount === 9 ? '🏆 Immaculate Grid Master!' : `Grid Finished: ${solvedCount}/9 Solved`}
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', margin: '0 0 16px' }}>
+            {solvedCount === 9
+              ? 'Flawless driving! You completed all 9 intersections across the grid.'
+              : `Great session! You matched ${solvedCount} out of 9 driver intersections.`}
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <button onClick={handleShare} className="paddock-share-btn">
+              <Share2 size={14} />
+              <span>{copied ? 'Copied to Clipboard!' : 'Share Grid'}</span>
+            </button>
             {mode === 'freeplay' && (
               <button
                 onClick={handleResetGame}
-                title="New Random Grid"
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
+                className="paddock-pill-btn"
+                style={{ background: 'rgba(255,255,255,0.1)' }}
               >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={() => setShowHelp(true)}
-              title="How to Play"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowStats(true)}
-              title="Stats"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
-            >
-              <BarChart2 className="w-4 h-4" />
-            </button>
-            {(isGameOver || solvedCount > 0) && (
-              <button
-                onClick={handleShare}
-                title="Share Result"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>{copied ? 'Copied!' : 'Share'}</span>
+                <RotateCcw size={14} />
+                <span>Next Grid</span>
               </button>
             )}
           </div>
         </div>
-
-        {/* 3x3 Grid Matrix Board */}
-        <div className="w-full max-w-2xl bg-black/60 p-3 sm:p-5 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl">
-          <div className="grid grid-cols-4 gap-2 sm:gap-3">
-            {/* Corner Cell (Nexus F1 Logo) */}
-            <div className="aspect-square flex flex-col items-center justify-center p-2 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
-              <Flame className="w-6 h-6 text-red-500 animate-pulse mb-1" />
-              <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase">
-                F1 GRID
-              </span>
-            </div>
-
-            {/* Column Headers (Cols 0, 1, 2) */}
-            {activeGrid.cols.map((colKey, colIdx) => {
-              const cat = GRID_CATEGORIES[colKey];
-              return (
-                <div
-                  key={`col-${colIdx}`}
-                  className="aspect-square flex flex-col items-center justify-center p-2 text-center rounded-2xl bg-white/[0.04] border border-white/10 transition-all shadow-inner"
-                  style={{ borderTop: `3px solid ${cat.color}` }}
-                >
-                  <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-white/50 mb-0.5">
-                    COL {colIdx + 1}
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-white line-clamp-2">
-                    {cat.label}
-                  </span>
-                  <span className="text-[9px] text-white/40 hidden sm:block mt-1 font-mono">
-                    {cat.badge}
-                  </span>
-                </div>
-              );
-            })}
-
-            {/* Row 0, 1, 2 + Cells */}
-            {activeGrid.rows.map((rowKey, rowIdx) => {
-              const rowCat = GRID_CATEGORIES[rowKey];
-              return (
-                <React.Fragment key={`row-${rowIdx}`}>
-                  {/* Row Header */}
-                  <div
-                    className="aspect-square flex flex-col items-center justify-center p-2 text-center rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner"
-                    style={{ borderLeft: `3px solid ${rowCat.color}` }}
-                  >
-                    <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-white/50 mb-0.5">
-                      ROW {rowIdx + 1}
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-white line-clamp-2">
-                      {rowCat.label}
-                    </span>
-                    <span className="text-[9px] text-white/40 hidden sm:block mt-1 font-mono">
-                      {rowCat.badge}
-                    </span>
-                  </div>
-
-                  {/* 3 Grid Cells for this row */}
-                  {[0, 1, 2].map((colIdx) => {
-                    const cellKey = `${rowIdx}-${colIdx}`;
-                    const driver = solvedCells[cellKey];
-                    const isSelected =
-                      selectedCell?.r === rowIdx && selectedCell?.c === colIdx;
-
-                    return (
-                      <button
-                        key={cellKey}
-                        onClick={() => handleCellClick(rowIdx, colIdx)}
-                        disabled={!!driver || isGameOver}
-                        className={`aspect-square rounded-2xl p-2 sm:p-3 flex flex-col items-center justify-center text-center transition-all relative overflow-hidden group ${
-                          driver
-                            ? 'bg-emerald-950/40 border-2 border-emerald-500/80 shadow-lg shadow-emerald-950/50'
-                            : isSelected
-                            ? 'bg-red-500/20 border-2 border-red-500 scale-[0.98]'
-                            : 'bg-white/[0.02] border border-white/10 hover:border-red-500/50 hover:bg-white/[0.06] cursor-pointer'
-                        }`}
-                      >
-                        {driver ? (
-                          <div className="flex flex-col items-center justify-center gap-1 w-full animate-fade-in">
-                            <span className="text-lg sm:text-2xl">{driver.flag}</span>
-                            <span className="text-xs sm:text-sm font-bold text-emerald-200 line-clamp-1">
-                              {driver.name}
-                            </span>
-                            <span className="text-[9px] font-mono text-emerald-400/80 px-1.5 py-0.5 rounded bg-emerald-900/60 uppercase">
-                              #{driver.number} • {driver.code}
-                            </span>
-                            <div className="absolute top-1.5 right-1.5 text-emerald-400">
-                              <Check className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center text-white/30 group-hover:text-red-400 transition-colors">
-                            <span className="text-xl sm:text-2xl font-light">
-                              +
-                            </span>
-                            <span className="text-[10px] sm:text-xs font-mono tracking-wider uppercase">
-                              Select
-                            </span>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Game Completed Banner */}
-        {isGameOver && (
-          <div className="w-full max-w-2xl mt-6 p-5 rounded-2xl bg-gradient-to-r from-red-950/60 via-black/80 to-red-950/60 border border-red-500/40 text-center animate-fade-in backdrop-blur-md">
-            <Trophy className="w-10 h-10 text-yellow-400 mx-auto mb-2 animate-bounce" />
-            <h3 className="text-xl font-bold text-white mb-1">
-              {solvedCount === 9
-                ? '🏆 Immaculate Grid Master!'
-                : `Grid Session Complete: ${solvedCount}/9 Solved`}
-            </h3>
-            <p className="text-xs sm:text-sm text-white/70 max-w-md mx-auto mb-4">
-              {solvedCount === 9
-                ? 'Flawless execution! You filled every single intersection across the Formula 1 grid.'
-                : `Solid effort! You found ${solvedCount} out of 9 driver intersections.`}
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Copied to Clipboard!' : 'Share Immaculate Grid'}</span>
-              </button>
-              {mode === 'freeplay' && (
-                <button
-                  onClick={handleResetGame}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm border border-white/20 transition-all"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Next Grid</span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Driver Selection Modal */}
       {selectedCell && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
-          <div className="w-full max-w-md bg-[#0c1017] border border-white/20 rounded-3xl p-5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
+        <div className="paddock-modal-overlay">
+          <div className="paddock-modal-content" style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div>
-                <span className="text-[10px] font-mono text-white/40 uppercase">
-                  Cell Selection (R{selectedCell.r + 1} × C{selectedCell.c + 1})
+                <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                  Intersection Cell R{selectedCell.r + 1} × C{selectedCell.c + 1}
                 </span>
-                <h4 className="text-sm font-bold text-white">
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '2px 0 0' }}>
                   {GRID_CATEGORIES[activeGrid.rows[selectedCell.r]].label} ✕{' '}
                   {GRID_CATEGORIES[activeGrid.cols[selectedCell.c]].label}
                 </h4>
               </div>
               <button
                 onClick={() => setSelectedCell(null)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                className="paddock-icon-btn"
+                style={{ width: '28px', height: '28px' }}
               >
-                <X className="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
-            {/* Feedback alert inside modal if clicked */}
             {feedback && (
               <div
-                className={`mb-3 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-                  feedback.type === 'success'
-                    ? 'bg-emerald-950/80 border border-emerald-500 text-emerald-300'
-                    : 'bg-red-950/80 border border-red-500 text-red-300'
-                }`}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  marginBottom: '10px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: feedback.type === 'success' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
+                  border: `1px solid ${feedback.type === 'success' ? '#10b981' : '#ef4444'}`,
+                  color: feedback.type === 'success' ? '#6ee7b7' : '#fca5a5',
+                }}
               >
-                {feedback.type === 'success' ? (
-                  <Check className="w-4 h-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                )}
+                {feedback.type === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
                 <span>{feedback.text}</span>
               </div>
             )}
 
-            {/* Search Input */}
-            <div className="relative mb-3">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+            <div className="paddock-search-box" style={{ maxWidth: '100%', marginBottom: '10px' }}>
+              <Search size={14} className="paddock-search-icon" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search driver by name, code, or team..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2 text-xs sm:text-sm text-white placeholder-white/30 focus:outline-none focus:border-red-500"
+                className="paddock-search-input"
+                style={{ padding: '8px 12px 8px 36px', fontSize: '0.85rem' }}
               />
             </div>
 
-            {/* Driver list */}
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '4px' }}>
               {filteredDrivers.length > 0 ? (
                 filteredDrivers.map((driver) => (
                   <button
                     key={driver.id}
                     onClick={() => handleSelectDriver(driver)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] hover:bg-red-600/20 hover:border-red-500/50 border border-white/5 transition-all text-left group"
+                    className="paddock-dropdown-item"
+                    style={{ padding: '8px 10px', border: '1px solid rgba(255,255,255,0.06)' }}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{driver.flag}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{driver.flag}</span>
                       <div>
-                        <div className="text-xs sm:text-sm font-semibold text-white group-hover:text-red-300 transition-colors">
-                          {driver.name}
-                        </div>
-                        <div className="text-[10px] text-white/50 font-mono">
-                          {driver.currentTeam} • {driver.championships > 0 ? `${driver.championships}x Champion` : `${driver.podiums} Podiums`}
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{driver.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                          {driver.currentTeam} • #{driver.number}
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white/80 transition-colors" />
                   </button>
                 ))
               ) : (
-                <div className="text-center py-6 text-xs text-white/40">
-                  No unused drivers found matching "{searchQuery}"
+                <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
+                  No available driver matches "{searchQuery}"
                 </div>
               )}
             </div>
@@ -587,45 +511,35 @@ const F1PaddockGrid = () => {
 
       {/* How to Play Modal */}
       {showHelp && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0c1017] border border-white/20 rounded-3xl p-6 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <h4 className="text-base font-bold text-white flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-red-500" />
-                <span>How to Play PaddockDle Grid</span>
-              </h4>
+        <div className="paddock-modal-overlay">
+          <div className="paddock-modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <HelpCircle size={18} color="#e10600" />
+                <span>How to Play Paddock Grid</span>
+              </h3>
               <button
                 onClick={() => setShowHelp(false)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                className="paddock-icon-btn"
+                style={{ width: '28px', height: '28px' }}
               >
-                <X className="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs sm:text-sm text-white/70">
-              <p>
-                🎯 <strong>Goal:</strong> Fill all 9 cells of the 3×3 matrix using
-                real Formula 1 drivers.
-              </p>
-              <p>
-                ⚡ <strong>Intersection Criteria:</strong> Each driver you pick must
-                satisfy <em>both</em> the Row criterion and the Column criterion for that cell.
-              </p>
-              <p>
-                🔒 <strong>Immaculate Rule:</strong> A driver can only be used
-                <strong> once</strong> across the entire grid.
-              </p>
-              <p>
-                🚫 <strong>9 Guesses:</strong> You have exactly 9 total guesses.
-                Every wrong pick costs a guess and leaves the cell unsolved!
-              </p>
+            <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>
+              <p>🎯 <strong>Objective:</strong> Complete all 9 cells of the 3×3 matrix.</p>
+              <p>⚡ <strong>Intersection:</strong> The chosen driver must satisfy <em>both</em> the row criteria and the column criteria.</p>
+              <p>🔒 <strong>Immaculate Rule:</strong> Each driver can only be picked <strong>once</strong> across the entire grid.</p>
+              <p>🚫 <strong>9 Guesses:</strong> A wrong guess burns a guess without solving the cell.</p>
             </div>
 
             <button
               onClick={() => setShowHelp(false)}
-              className="w-full mt-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs sm:text-sm transition-colors"
+              className="paddock-pill-btn active"
+              style={{ width: '100%', marginTop: '16px', justifyContent: 'center', padding: '10px' }}
             >
-              Ready to Race
+              Start Racing
             </button>
           </div>
         </div>
@@ -633,57 +547,51 @@ const F1PaddockGrid = () => {
 
       {/* Stats Modal */}
       {showStats && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0c1017] border border-white/20 rounded-3xl p-6 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <h4 className="text-base font-bold text-white flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 text-red-500" />
-                <span>PaddockDle Grid Career Telemetry</span>
-              </h4>
+        <div className="paddock-modal-overlay">
+          <div className="paddock-modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BarChart2 size={18} color="#ffd700" />
+                <span>Grid Telemetry Stats</span>
+              </h3>
               <button
                 onClick={() => setShowStats(false)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                className="paddock-icon-btn"
+                style={{ width: '28px', height: '28px' }}
               >
-                <X className="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 text-center mb-6">
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-white">{stats.played}</div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Played
-                </div>
+            <div className="paddock-stats-grid">
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num">{stats.played}</span>
+                <span className="paddock-stat-lbl">Played</span>
               </div>
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-emerald-400">
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num" style={{ color: '#34d399' }}>
                   {stats.perfectWins}
-                </div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  9/9 Wins
-                </div>
+                </span>
+                <span className="paddock-stat-lbl">9/9 Solved</span>
               </div>
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-yellow-400">
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num" style={{ color: '#f59e0b' }}>
                   {stats.currentStreak}
-                </div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Streak
-                </div>
+                </span>
+                <span className="paddock-stat-lbl">Streak</span>
               </div>
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-red-400">
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num" style={{ color: '#60a5fa' }}>
                   {stats.maxStreak}
-                </div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Max Streak
-                </div>
+                </span>
+                <span className="paddock-stat-lbl">Max Streak</span>
               </div>
             </div>
 
             <button
               onClick={() => setShowStats(false)}
-              className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm transition-colors"
+              className="paddock-pill-btn"
+              style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
             >
               Close Telemetry
             </button>

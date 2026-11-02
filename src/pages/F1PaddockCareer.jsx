@@ -1,24 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  GitBranch,
   Search,
   Trophy,
   RotateCcw,
   Share2,
   HelpCircle,
   BarChart2,
-  Check,
-  X,
-  Flame,
   Calendar,
   Sparkles,
   Lock,
   Eye,
-  Award,
-  Globe,
-  Flag,
   Heart,
-  ChevronRight,
+  X,
 } from 'lucide-react';
 import PaddockNav from '../components/PaddockNav';
 import {
@@ -29,6 +22,7 @@ import {
   generateCareerShareText,
 } from '../utils/f1PaddockData';
 import { useSound } from '../context/SoundContext';
+import '../styles/paddockdle.css';
 
 const MAX_STEPS = 5;
 
@@ -37,12 +31,11 @@ const F1PaddockCareer = () => {
 
   const [mode, setMode] = useState('daily');
   const [secretDriver, setSecretDriver] = useState(() => getDailyCareerDriver());
-  const [currentStep, setCurrentStep] = useState(1); // 1 to 5
-  const [guesses, setGuesses] = useState([]); // [{ driver, step, isCorrect }]
+  const [currentStep, setCurrentStep] = useState(1);
+  const [guesses, setGuesses] = useState([]);
   const [isWon, setIsWon] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // Search input state
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -51,12 +44,10 @@ const F1PaddockCareer = () => {
 
   const searchInputRef = useRef(null);
 
-  // Clues for current secret driver
   const clues = useMemo(() => {
     return generateCareerClues(secretDriver);
   }, [secretDriver]);
 
-  // Persistent stats
   const [stats, setStats] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_f1_career_stats');
@@ -68,7 +59,6 @@ const F1PaddockCareer = () => {
     }
   });
 
-  // Daily persistence
   useEffect(() => {
     if (mode === 'daily') {
       const todayKey = `nexus_f1_career_daily_${new Date().toISOString().slice(0, 10)}`;
@@ -87,12 +77,10 @@ const F1PaddockCareer = () => {
     }
   }, [mode]);
 
-  // Filter drivers for guess autocomplete
   const filteredDrivers = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return [];
     return F1_DRIVERS.filter((d) => {
-      // Exclude already guessed
       if (guesses.some((g) => g.driver.id === d.id)) return false;
       return (
         d.name.toLowerCase().includes(q) ||
@@ -238,353 +226,309 @@ const F1PaddockCareer = () => {
   const currentScore = isWon ? (6 - currentStep) * 200 : 0;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-white flex flex-col items-center px-3 sm:px-6 py-6 font-sans">
+    <div className="paddock-container">
       <PaddockNav activeTab="career" />
 
-      {/* Main Wrapper */}
-      <div className="w-full max-w-3xl flex flex-col items-center">
-        {/* Controls Bar */}
-        <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-6 bg-white/[0.03] border border-white/10 p-3 sm:p-4 rounded-2xl backdrop-blur-md">
-          {/* Mode Switcher */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (mode !== 'daily') {
-                  setMode('daily');
-                  setSecretDriver(getDailyCareerDriver());
-                  setCurrentStep(1);
-                  setGuesses([]);
-                  setIsWon(false);
-                  setIsGameOver(false);
-                }
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                mode === 'daily'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                  : 'bg-white/5 text-white/60 hover:text-white'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Daily Career</span>
+      {/* Hero Title */}
+      <div className="paddock-hero">
+        <h1>
+          <span>PADDOCK</span>
+          <span className="brand-red">CAREER</span>
+        </h1>
+        <p>Formula 1 Career Progression & Timeline Guesser</p>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="paddock-controls-bar">
+        <div className="paddock-mode-toggle">
+          <button
+            onClick={() => {
+              if (mode !== 'daily') {
+                sound?.playMove?.();
+                setMode('daily');
+                setSecretDriver(getDailyCareerDriver());
+                setCurrentStep(1);
+                setGuesses([]);
+                setIsWon(false);
+                setIsGameOver(false);
+              }
+            }}
+            className={`paddock-pill-btn ${mode === 'daily' ? 'active' : ''}`}
+          >
+            <Calendar size={13} />
+            <span>Daily Driver</span>
+          </button>
+          <button
+            onClick={() => {
+              if (mode !== 'freeplay') {
+                sound?.playMove?.();
+                setMode('freeplay');
+                handleResetGame();
+              }
+            }}
+            className={`paddock-pill-btn ${mode === 'freeplay' ? 'active' : ''}`}
+          >
+            <Sparkles size={13} />
+            <span>Practice Mode</span>
+          </button>
+        </div>
+
+        {/* Clue & Hearts Tracker */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+          <div>
+            Clue: <strong style={{ color: '#ffd700' }}>{currentStep}/{MAX_STEPS}</strong>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Heart
+                key={s}
+                size={14}
+                style={{
+                  color: s <= (MAX_STEPS - (guesses.length || 0)) ? '#ef4444' : 'rgba(255,255,255,0.2)',
+                  fill: s <= (MAX_STEPS - (guesses.length || 0)) ? '#ef4444' : 'transparent',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="paddock-actions">
+          {mode === 'freeplay' && (
+            <button onClick={handleResetGame} className="paddock-icon-btn" title="New Driver">
+              <RotateCcw size={14} />
             </button>
-            <button
-              onClick={() => {
-                if (mode !== 'freeplay') {
-                  setMode('freeplay');
-                  handleResetGame();
-                }
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                mode === 'freeplay'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                  : 'bg-white/5 text-white/60 hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Practice Mode</span>
+          )}
+          <button onClick={() => setShowHelp(true)} className="paddock-icon-btn" title="How to play">
+            <HelpCircle size={14} />
+          </button>
+          <button onClick={() => setShowStats(true)} className="paddock-icon-btn" title="View Stats">
+            <BarChart2 size={14} />
+          </button>
+          {isGameOver && (
+            <button onClick={handleShare} className="paddock-share-btn">
+              <Share2 size={13} />
+              <span>{copied ? 'Copied!' : 'Share'}</span>
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* Clues Timeline Stack */}
+      <div className="paddock-career-stack">
+        {clues.map((clue, idx) => {
+          const stepNum = idx + 1;
+          const isRevealed = stepNum <= currentStep || isGameOver;
+          const isCurrent = stepNum === currentStep && !isGameOver;
+
+          return (
+            <div
+              key={clue.step}
+              className={`paddock-clue-card ${isCurrent ? 'active' : ''} ${!isRevealed ? 'locked' : ''}`}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="paddock-step-badge">
+                  {stepNum}
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+                    {clue.title}
+                  </div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '2px' }}>
+                    {isRevealed ? clue.value : '••••••••••••••••••••••••'}
+                  </div>
+                </div>
+              </div>
+
+              {!isRevealed ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
+                  <Lock size={14} />
+                  <span>Locked</span>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.72rem', color: '#34d399', background: 'rgba(16,185,129,0.15)', padding: '3px 8px', borderRadius: '6px', fontFamily: 'monospace' }}>
+                  {clue.hint}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Guess Input & Controls */}
+      {!isGameOver ? (
+        <div style={{ width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="paddock-search-box" style={{ maxWidth: '100%', margin: 0 }}>
+            <Search size={16} className="paddock-search-icon" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsDropdownOpen(true);
+              }}
+              onFocus={() => setIsDropdownOpen(true)}
+              placeholder="Type driver name (e.g. Hamilton, Vettel, Alonso)..."
+              className="paddock-search-input"
+            />
+
+            {isDropdownOpen && filteredDrivers.length > 0 && (
+              <div className="paddock-dropdown">
+                {filteredDrivers.map((driver) => (
+                  <button
+                    key={driver.id}
+                    onClick={() => handleGuess(driver)}
+                    className="paddock-dropdown-item"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1.25rem' }}>{driver.flag}</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{driver.name}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                          {driver.currentTeam} • #{driver.number}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Clues & Hearts */}
-          <div className="flex items-center gap-4 text-xs sm:text-sm font-mono">
-            <div className="flex items-center gap-1.5">
-              <span className="text-white/50">Clue:</span>
-              <span className="font-bold text-yellow-400">
-                {currentStep}/{MAX_STEPS}
-              </span>
+          {currentStep < MAX_STEPS && (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                onClick={handleRevealClue}
+                className="paddock-pill-btn"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+              >
+                <Eye size={14} />
+                <span>Reveal Next Clue (-200 pts)</span>
+              </button>
             </div>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Heart
-                  key={s}
-                  className={`w-3.5 h-3.5 ${
-                    s <= (MAX_STEPS - (guesses.length || 0))
-                      ? 'text-red-500 fill-red-500'
-                      : 'text-white/20'
-                  }`}
-                />
-              ))}
+          )}
+        </div>
+      ) : (
+        /* Game Over Banner */
+        <div className="paddock-banner">
+          <Trophy size={36} color="#ffd700" style={{ margin: '0 auto 8px', display: 'block' }} />
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 6px', color: isWon ? '#34d399' : '#ff4757' }}>
+            {isWon ? 'Career Decoded!' : 'Out of Clues (DNF)'}
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', margin: '0 0 16px' }}>
+            {isWon
+              ? `Telemetry decoded! You identified the driver on Clue ${currentStep}/${MAX_STEPS}!`
+              : 'End of telemetry stream. Secret driver identity revealed below.'}
+          </p>
+
+          {/* Driver identity */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '14px',
+              padding: '12px',
+              borderRadius: '14px',
+              background: 'rgba(255,255,255,0.05)',
+              marginBottom: '16px',
+            }}
+          >
+            <span style={{ fontSize: '2.5rem' }}>{secretDriver.flag}</span>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{secretDriver.name}</div>
+              <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>
+                {secretDriver.currentTeam} • Code: {secretDriver.code} (#{secretDriver.number})
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, marginTop: '2px' }}>
+                Score: {currentScore} points
+              </div>
             </div>
           </div>
 
-          {/* Action Icons */}
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <button onClick={handleShare} className="paddock-share-btn">
+              <Share2 size={14} />
+              <span>{copied ? 'Copied to Clipboard!' : 'Share Telemetry'}</span>
+            </button>
             {mode === 'freeplay' && (
               <button
                 onClick={handleResetGame}
-                title="New Random Driver"
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
+                className="paddock-pill-btn"
+                style={{ background: 'rgba(255,255,255,0.1)' }}
               >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={() => setShowHelp(true)}
-              title="How to Play"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowStats(true)}
-              title="Career Telemetry"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
-            >
-              <BarChart2 className="w-4 h-4" />
-            </button>
-            {isGameOver && (
-              <button
-                onClick={handleShare}
-                title="Share Result"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>{copied ? 'Copied!' : 'Share'}</span>
+                <RotateCcw size={14} />
+                <span>Next Driver</span>
               </button>
             )}
           </div>
         </div>
+      )}
 
-        {/* Clues Timeline Stack */}
-        <div className="w-full space-y-3 mb-6">
-          {clues.map((clue, idx) => {
-            const stepNum = idx + 1;
-            const isRevealed = stepNum <= currentStep || isGameOver;
-            const isCurrent = stepNum === currentStep && !isGameOver;
-
-            return (
+      {/* Previous Guesses Log */}
+      {guesses.length > 0 && (
+        <div style={{ width: '100%', maxWidth: '580px', marginTop: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', textTransform: 'uppercase', marginBottom: '8px' }}>
+            Previous Attempts ({guesses.length}/{MAX_STEPS})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {guesses.map((g, idx) => (
               <div
-                key={clue.step}
-                className={`relative rounded-2xl p-4 transition-all duration-300 border ${
-                  isRevealed
-                    ? isCurrent
-                      ? 'bg-gradient-to-r from-red-950/40 via-white/[0.04] to-red-950/40 border-red-500/60 shadow-lg shadow-red-950/30'
-                      : 'bg-white/[0.03] border-white/15'
-                    : 'bg-black/30 border-white/5 opacity-50'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono text-xs font-bold shrink-0 ${
-                        isRevealed
-                          ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                          : 'bg-white/10 text-white/40'
-                      }`}
-                    >
-                      {stepNum}
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-mono uppercase tracking-wider text-white/40">
-                        {clue.title}
-                      </div>
-                      <div className="text-sm sm:text-base font-bold text-white mt-0.5">
-                        {isRevealed ? (
-                          clue.value
-                        ) : (
-                          <span className="blur-sm select-none text-white/40 font-mono">
-                            ••••••••••••••••••••••••
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isRevealed ? (
-                    <div className="flex items-center gap-1.5 text-xs text-white/30 font-mono shrink-0">
-                      <Lock className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Locked</span>
-                    </div>
-                  ) : (
-                    <div className="text-[11px] font-mono text-emerald-400/80 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
-                      {clue.hint}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Guess Input & Controls (When Active) */}
-        {!isGameOver ? (
-          <div className="w-full max-w-xl flex flex-col gap-3">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsDropdownOpen(true);
+                key={idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  background: g.isCorrect ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.15)',
+                  border: `1px solid ${g.isCorrect ? '#10b981' : 'rgba(239,68,68,0.3)'}`,
+                  color: g.isCorrect ? '#6ee7b7' : '#fca5a5',
                 }}
-                onFocus={() => setIsDropdownOpen(true)}
-                placeholder="Type driver name (e.g. Hamilton, Vettel, Alonso)..."
-                className="w-full bg-white/5 border border-white/20 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 shadow-xl"
-              />
-
-              {/* Autocomplete Dropdown */}
-              {isDropdownOpen && filteredDrivers.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-2 bg-[#0d121c] border border-white/20 rounded-2xl p-1.5 shadow-2xl z-40 max-h-60 overflow-y-auto">
-                  {filteredDrivers.map((driver) => (
-                    <button
-                      key={driver.id}
-                      onClick={() => handleGuess(driver)}
-                      className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-red-600/20 hover:border-red-500/40 border border-transparent transition-all text-left group"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{driver.flag}</span>
-                        <div>
-                          <div className="text-sm font-semibold text-white group-hover:text-red-300">
-                            {driver.name}
-                          </div>
-                          <div className="text-[10px] text-white/40 font-mono">
-                            {driver.currentTeam} • #{driver.number}
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Skip / Next Clue Button */}
-            {currentStep < MAX_STEPS && (
-              <div className="flex justify-center">
-                <button
-                  onClick={handleRevealClue}
-                  className="flex items-center gap-2 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/10 transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Reveal Next Clue (-200 pts)</span>
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Game Over / Win Card */
-          <div className="w-full max-w-xl p-6 rounded-3xl bg-gradient-to-r from-red-950/60 via-black/80 to-red-950/60 border border-red-500/40 text-center animate-fade-in backdrop-blur-md shadow-2xl">
-            <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-3 animate-bounce" />
-            <h3 className="text-2xl font-bold text-white mb-1">
-              {isWon ? 'Career Decoded!' : 'Out of Clues (DNF)'}
-            </h3>
-            <p className="text-xs sm:text-sm text-white/70 mb-4">
-              {isWon
-                ? `Incredible telemetry analysis! You identified the mystery driver on Clue ${currentStep}/${MAX_STEPS}.`
-                : 'Hard luck on the telemetry! The secret driver was revealed below.'}
-            </p>
-
-            {/* Driver Identity Card */}
-            <div className="flex items-center justify-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 max-w-md mx-auto">
-              <span className="text-4xl">{secretDriver.flag}</span>
-              <div className="text-left">
-                <h4 className="text-lg font-bold text-white">
-                  {secretDriver.name}
-                </h4>
-                <div className="text-xs text-white/60 font-mono">
-                  {secretDriver.currentTeam} • Code: {secretDriver.code} (#{secretDriver.number})
-                </div>
-                <div className="text-xs text-emerald-400 font-semibold mt-1">
-                  Score: {currentScore} points
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all"
               >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Copied to Clipboard!' : 'Share Result'}</span>
-              </button>
-              {mode === 'freeplay' && (
-                <button
-                  onClick={handleResetGame}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm border border-white/20 transition-all"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Next Driver</span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Guesses Log */}
-        {guesses.length > 0 && (
-          <div className="w-full max-w-xl mt-6">
-            <div className="text-xs font-mono uppercase text-white/40 mb-2">
-              Previous Guesses ({guesses.length}/{MAX_STEPS})
-            </div>
-            <div className="space-y-1.5">
-              {guesses.map((g, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold ${
-                    g.isCorrect
-                      ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200'
-                      : 'bg-red-950/40 border-red-500/30 text-red-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{g.driver.flag}</span>
-                    <span>{g.driver.name}</span>
-                    <span className="text-[10px] opacity-60 font-mono">
-                      (Clue {g.step})
-                    </span>
-                  </div>
-                  <div>{g.isCorrect ? '✅ Match' : '❌ Miss'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>{g.driver.flag}</span>
+                  <span>{g.driver.name}</span>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.6, fontFamily: 'monospace' }}>(Clue {g.step})</span>
                 </div>
-              ))}
-            </div>
+                <span>{g.isCorrect ? '✅ Solved' : '❌ Miss'}</span>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* How to Play Modal */}
       {showHelp && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0c1017] border border-white/20 rounded-3xl p-6 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <h4 className="text-base font-bold text-white flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-red-500" />
+        <div className="paddock-modal-overlay">
+          <div className="paddock-modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <HelpCircle size={18} color="#e10600" />
                 <span>How to Play Career Timeline</span>
-              </h4>
+              </h3>
               <button
                 onClick={() => setShowHelp(false)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                className="paddock-icon-btn"
+                style={{ width: '28px', height: '28px' }}
               >
-                <X className="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs sm:text-sm text-white/70">
-              <p>
-                🎯 <strong>Goal:</strong> Guess the secret Formula 1 driver using
-                as few career timeline clues as possible.
-              </p>
-              <p>
-                ⏱️ <strong>Progressive Clues:</strong> The game starts with Clue 1
-                (Debut Team & Year). An incorrect guess unlocks the next clue.
-              </p>
-              <p>
-                ⚡ <strong>Maximum Score:</strong> Solving on Clue 1 awards
-                <strong> 1,000 points</strong>! Each subsequent clue deducts 200
-                points.
-              </p>
-              <p>
-                💔 <strong>5 Total Guesses:</strong> You have 5 chances before
-                a DNF (Did Not Finish).
-              </p>
+            <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>
+              <p>🎯 <strong>Objective:</strong> Guess the secret driver using minimal clues.</p>
+              <p>⏱️ <strong>Clues:</strong> Reveal debut team, career path, nationality, stats & code.</p>
+              <p>⚡ <strong>Scoring:</strong> Guessing on Clue 1 awards <strong>1,000 pts</strong>! Each extra clue deducts 200 pts.</p>
+              <p>💔 <strong>Hearts:</strong> 5 maximum attempts before a DNF.</p>
             </div>
 
             <button
               onClick={() => setShowHelp(false)}
-              className="w-full mt-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs sm:text-sm transition-colors"
+              className="paddock-pill-btn active"
+              style={{ width: '100%', marginTop: '16px', justifyContent: 'center', padding: '10px' }}
             >
               Start Guessing
             </button>
@@ -594,57 +538,45 @@ const F1PaddockCareer = () => {
 
       {/* Stats Modal */}
       {showStats && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0c1017] border border-white/20 rounded-3xl p-6 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <h4 className="text-base font-bold text-white flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 text-red-500" />
+        <div className="paddock-modal-overlay">
+          <div className="paddock-modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BarChart2 size={18} color="#ffd700" />
                 <span>Career Guesser Stats</span>
-              </h4>
+              </h3>
               <button
                 onClick={() => setShowStats(false)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                className="paddock-icon-btn"
+                style={{ width: '28px', height: '28px' }}
               >
-                <X className="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 text-center mb-6">
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-white">{stats.played}</div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Played
-                </div>
+            <div className="paddock-stats-grid">
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num">{stats.played}</span>
+                <span className="paddock-stat-lbl">Played</span>
               </div>
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-emerald-400">
-                  {stats.wins}
-                </div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Wins
-                </div>
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num" style={{ color: '#34d399' }}>{stats.wins}</span>
+                <span className="paddock-stat-lbl">Wins</span>
               </div>
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-yellow-400">
-                  {stats.currentStreak}
-                </div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Streak
-                </div>
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num" style={{ color: '#f59e0b' }}>{stats.currentStreak}</span>
+                <span className="paddock-stat-lbl">Streak</span>
               </div>
-              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="text-xl font-bold text-red-400">
-                  {stats.totalScore}
-                </div>
-                <div className="text-[10px] text-white/50 uppercase font-mono mt-1">
-                  Score
-                </div>
+              <div className="paddock-stat-box">
+                <span className="paddock-stat-num" style={{ color: '#60a5fa' }}>{stats.totalScore}</span>
+                <span className="paddock-stat-lbl">Score</span>
               </div>
             </div>
 
             <button
               onClick={() => setShowStats(false)}
-              className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm transition-colors"
+              className="paddock-pill-btn"
+              style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
             >
               Close Stats
             </button>
