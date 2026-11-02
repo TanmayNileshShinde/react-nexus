@@ -26,6 +26,7 @@ import {
   generateShareGrid,
 } from '../utils/f1PaddockData';
 import { useSound } from '../context/SoundContext';
+import PaddockNav from '../components/PaddockNav';
 
 const MAX_GUESSES = 6;
 
@@ -242,17 +243,11 @@ const F1PaddockClassic = () => {
         />
       </div>
 
-      {/* Navigation Header */}
-      <div className="w-full max-w-4xl flex items-center justify-between pb-4 border-b border-white/10 mb-6 gap-3">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-colors"
-          onClick={() => sound?.playClick()}
-        >
-          <ArrowLeft size={14} />
-          <span>Arcade Hub</span>
-        </Link>
+      {/* PaddockDle Shared Nav */}
+      <PaddockNav activeTab="classic" />
 
+      {/* Game Title & Tools Header */}
+      <div className="w-full max-w-4xl flex items-center justify-between pb-4 border-b border-white/10 mb-6 gap-3">
         {/* Title */}
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-xl bg-red-600/20 border border-red-500/40 text-red-500 shadow-[0_0_15px_rgba(225,6,0,0.3)]">
