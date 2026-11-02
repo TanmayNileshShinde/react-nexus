@@ -10,6 +10,8 @@ import SnakeGame from './pages/SnakeGame';
 import TypingMaster from './pages/TypingMaster';
 import F1HigherLower from './pages/F1HigherLower';
 import F1PaddockClassic from './pages/F1PaddockClassic';
+import F1PaddockGrid from './pages/F1PaddockGrid';
+import F1PaddockCareer from './pages/F1PaddockCareer';
 import Neon2048 from './pages/Neon2048';
 import { SoundProvider } from './context/SoundContext';
 import AudioController from './components/AudioController';
@@ -47,6 +49,8 @@ function App() {
           <Route path="/f1" element={<F1HigherLower />} />
           <Route path="/paddockdle" element={<F1PaddockClassic />} />
           <Route path="/f1-wordle" element={<F1PaddockClassic />} />
+          <Route path="/paddockdle-grid" element={<F1PaddockGrid />} />
+          <Route path="/paddockdle-career" element={<F1PaddockCareer />} />
           <Route path="/type" element={<TypingMaster />} />
           <Route path="/2048" element={<Neon2048 />} />
         </Routes>

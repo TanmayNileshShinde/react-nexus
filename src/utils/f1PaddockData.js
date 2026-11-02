@@ -640,6 +640,167 @@ export const F1_DRIVERS = [
     teams: ['Alfa Romeo', 'Kick Sauber', 'Sauber'],
     achievements: ['First Chinese F1 Driver', 'Points on Debut'],
   },
+  {
+    id: 'mark-webber',
+    name: 'Mark Webber',
+    code: 'WEB',
+    number: 2,
+    nationality: 'Australia',
+    flag: '🇦🇺',
+    currentTeam: 'Retired / Red Bull',
+    engine: 'Renault',
+    championships: 0,
+    raceWins: 9,
+    podiums: 42,
+    debutYear: 2002,
+    age: 48,
+    careerPath: [
+      { team: 'Minardi', years: '2002' },
+      { team: 'Jaguar', years: '2003 - 2004' },
+      { team: 'Williams', years: '2005 - 2006' },
+      { team: 'Red Bull Racing', years: '2007 - 2013' },
+    ],
+    teams: ['Minardi', 'Jaguar', 'Williams', 'Red Bull Racing', 'Red Bull'],
+    achievements: ['Monaco GP Winner', 'British GP Winner', 'Pole Sitter', 'Race Winner'],
+  },
+  {
+    id: 'david-coulthard',
+    name: 'David Coulthard',
+    code: 'COU',
+    number: 10,
+    nationality: 'United Kingdom',
+    flag: '🇬🇧',
+    currentTeam: 'Retired / Red Bull',
+    engine: 'Mercedes',
+    championships: 0,
+    raceWins: 13,
+    podiums: 62,
+    debutYear: 1994,
+    age: 53,
+    careerPath: [
+      { team: 'Williams', years: '1994 - 1995' },
+      { team: 'McLaren', years: '1996 - 2004' },
+      { team: 'Red Bull Racing', years: '2005 - 2008' },
+    ],
+    teams: ['Williams', 'McLaren', 'Red Bull Racing', 'Red Bull'],
+    achievements: ['Monaco GP Winner', 'British GP Winner', 'Pole Sitter', 'Race Winner', '10+ Race Wins'],
+  },
+  {
+    id: 'rubens-barrichello',
+    name: 'Rubens Barrichello',
+    code: 'BAR',
+    number: 2,
+    nationality: 'Brazil',
+    flag: '🇧🇷',
+    currentTeam: 'Retired / Stock Car',
+    engine: 'Ferrari',
+    championships: 0,
+    raceWins: 11,
+    podiums: 68,
+    debutYear: 1993,
+    age: 52,
+    careerPath: [
+      { team: 'Jordan', years: '1993 - 1996' },
+      { team: 'Stewart', years: '1997 - 1999' },
+      { team: 'Ferrari', years: '2000 - 2005' },
+      { team: 'Honda', years: '2006 - 2008' },
+      { team: 'Brawn GP', years: '2009' },
+      { team: 'Williams', years: '2010 - 2011' },
+    ],
+    teams: ['Jordan', 'Stewart', 'Ferrari', 'Honda', 'Brawn GP', 'Williams'],
+    achievements: ['Italian GP Winner', 'Pole Sitter', 'Race Winner', '10+ Race Wins', '300+ GP Starts'],
+  },
+  {
+    id: 'mika-hakkinen',
+    name: 'Mika Häkkinen',
+    code: 'HAK',
+    number: 1,
+    nationality: 'Finland',
+    flag: '🇫🇮',
+    currentTeam: 'Retired / McLaren',
+    engine: 'Mercedes',
+    championships: 2,
+    raceWins: 20,
+    podiums: 51,
+    debutYear: 1991,
+    age: 56,
+    careerPath: [
+      { team: 'Lotus', years: '1991 - 1992' },
+      { team: 'McLaren', years: '1993 - 2001' },
+    ],
+    teams: ['Lotus', 'McLaren'],
+    achievements: ['World Champion', 'Monaco GP Winner', 'Pole Sitter', 'Race Winner', '2x World Champion'],
+  },
+  {
+    id: 'nigel-mansell',
+    name: 'Nigel Mansell',
+    code: 'MAN',
+    number: 5,
+    nationality: 'United Kingdom',
+    flag: '🇬🇧',
+    currentTeam: 'Retired',
+    engine: 'Renault',
+    championships: 1,
+    raceWins: 31,
+    podiums: 59,
+    debutYear: 1980,
+    age: 71,
+    careerPath: [
+      { team: 'Lotus', years: '1980 - 1984' },
+      { team: 'Williams', years: '1985 - 1988' },
+      { team: 'Ferrari', years: '1989 - 1990' },
+      { team: 'Williams', years: '1991 - 1992' },
+      { team: 'Williams', years: '1994' },
+      { team: 'McLaren', years: '1995' },
+    ],
+    teams: ['Lotus', 'Williams', 'Ferrari', 'McLaren'],
+    achievements: ['World Champion', 'British GP Winner', 'Pole Sitter', 'Race Winner', '10+ Race Wins'],
+  },
+  {
+    id: 'damon-hill',
+    name: 'Damon Hill',
+    code: 'HIL',
+    number: 0,
+    nationality: 'United Kingdom',
+    flag: '🇬🇧',
+    currentTeam: 'Retired / Sky F1',
+    engine: 'Renault',
+    championships: 1,
+    raceWins: 22,
+    podiums: 42,
+    debutYear: 1992,
+    age: 64,
+    careerPath: [
+      { team: 'Brabham', years: '1992' },
+      { team: 'Williams', years: '1993 - 1996' },
+      { team: 'Arrows', years: '1997' },
+      { team: 'Jordan', years: '1998 - 1999' },
+    ],
+    teams: ['Brabham', 'Williams', 'Arrows', 'Jordan'],
+    achievements: ['World Champion', 'British GP Winner', 'Pole Sitter', 'Race Winner', '10+ Race Wins'],
+  },
+  {
+    id: 'romain-grosjean',
+    name: 'Romain Grosjean',
+    code: 'GRO',
+    number: 8,
+    nationality: 'France',
+    flag: '🇫🇷',
+    currentTeam: 'IndyCar',
+    engine: 'Ferrari',
+    championships: 0,
+    raceWins: 0,
+    podiums: 10,
+    debutYear: 2009,
+    age: 38,
+    careerPath: [
+      { team: 'Renault', years: '2009' },
+      { team: 'Lotus', years: '2012 - 2015' },
+      { team: 'Haas', years: '2016 - 2020' },
+    ],
+    teams: ['Renault', 'Lotus', 'Haas'],
+    achievements: ['10 F1 Podiums', 'Bahrain Fire Survivor', 'IndyCar Pole Sitter'],
+  },
 ];
 
 // Helper to get daily secret driver based on calendar day
@@ -750,4 +911,260 @@ export function generateShareGrid(guesses, secret, isWon, mode = 'Daily') {
 
   const header = `🏎️ PaddockDle (${mode}) - ${isWon ? guesses.length : 'X'}/6`;
   return `${header}\n\n${rows.join('\n')}\n\nhttps://react-nexus.web.app`;
+}
+
+// ==========================================
+// PADDOCKDLE GRID (3x3 IMMACULATE GRID) DATA
+// ==========================================
+
+export const GRID_CATEGORIES = {
+  ferrari: {
+    id: 'ferrari',
+    label: 'Ferrari',
+    badge: 'Scuderia Ferrari',
+    type: 'team',
+    color: '#e10600',
+    check: (d) => d.teams.some((t) => /ferrari/i.test(t)),
+  },
+  mercedes: {
+    id: 'mercedes',
+    label: 'Mercedes',
+    badge: 'Mercedes-AMG',
+    type: 'team',
+    color: '#00d2be',
+    check: (d) => d.teams.some((t) => /mercedes/i.test(t)),
+  },
+  redbull: {
+    id: 'redbull',
+    label: 'Red Bull',
+    badge: 'Red Bull Racing',
+    type: 'team',
+    color: '#1e41ff',
+    check: (d) => d.teams.some((t) => /red bull/i.test(t)),
+  },
+  mclaren: {
+    id: 'mclaren',
+    label: 'McLaren',
+    badge: 'McLaren F1',
+    type: 'team',
+    color: '#ff8700',
+    check: (d) => d.teams.some((t) => /mclaren/i.test(t)),
+  },
+  renault_alpine: {
+    id: 'renault_alpine',
+    label: 'Alpine / Renault',
+    badge: 'Alpine / Lotus / Renault',
+    type: 'team',
+    color: '#0090ff',
+    check: (d) => d.teams.some((t) => /renault|alpine|lotus/i.test(t)),
+  },
+  williams: {
+    id: 'williams',
+    label: 'Williams',
+    badge: 'Williams Racing',
+    type: 'team',
+    color: '#005aff',
+    check: (d) => d.teams.some((t) => /williams/i.test(t)),
+  },
+  sauber: {
+    id: 'sauber',
+    label: 'Sauber / Alfa Romeo',
+    badge: 'Hinwil Team',
+    type: 'team',
+    color: '#00e700',
+    check: (d) => d.teams.some((t) => /sauber|alfa romeo|kick/i.test(t)),
+  },
+  champion: {
+    id: 'champion',
+    label: 'World Champion 🏆',
+    badge: '1+ World Titles',
+    type: 'stat',
+    color: '#ffd700',
+    check: (d) => d.championships >= 1,
+  },
+  podiums_10: {
+    id: 'podiums_10',
+    label: '10+ Podiums 🍾',
+    badge: '10+ Career Podiums',
+    type: 'stat',
+    color: '#a855f7',
+    check: (d) => d.podiums >= 10,
+  },
+  podiums_50: {
+    id: 'podiums_50',
+    label: '50+ Podiums ⭐',
+    badge: '50+ Career Podiums',
+    type: 'stat',
+    color: '#ec4899',
+    check: (d) => d.podiums >= 50,
+  },
+  race_winner: {
+    id: 'race_winner',
+    label: 'Race Winner 🏁',
+    badge: '1+ GP Victories',
+    type: 'stat',
+    color: '#10b981',
+    check: (d) => d.raceWins >= 1,
+  },
+  british: {
+    id: 'british',
+    label: 'British Driver 🇬🇧',
+    badge: 'United Kingdom',
+    type: 'nationality',
+    color: '#3b82f6',
+    check: (d) => d.nationality === 'United Kingdom',
+  },
+  german: {
+    id: 'german',
+    label: 'German Driver 🇩🇪',
+    badge: 'Germany',
+    type: 'nationality',
+    color: '#f59e0b',
+    check: (d) => d.nationality === 'Germany',
+  },
+};
+
+export const CURATED_GRIDS = [
+  {
+    id: 'grid-1',
+    title: 'Titan Constructors vs Champions',
+    rows: ['ferrari', 'mclaren', 'williams'],
+    cols: ['champion', 'british', 'podiums_50'],
+  },
+  {
+    id: 'grid-2',
+    title: 'Modern Powerhouses',
+    rows: ['redbull', 'mercedes', 'ferrari'],
+    cols: ['race_winner', 'champion', 'podiums_10'],
+  },
+  {
+    id: 'grid-3',
+    title: 'Historic Legends & Podiums',
+    rows: ['mclaren', 'renault_alpine', 'williams'],
+    cols: ['podiums_10', 'champion', 'race_winner'],
+  },
+  {
+    id: 'grid-4',
+    title: 'German & British Precision',
+    rows: ['mercedes', 'ferrari', 'williams'],
+    cols: ['german', 'british', 'race_winner'],
+  },
+  {
+    id: 'grid-5',
+    title: 'Midfield to Glory',
+    rows: ['sauber', 'redbull', 'renault_alpine'],
+    cols: ['race_winner', 'podiums_10', 'champion'],
+  },
+  {
+    id: 'grid-6',
+    title: 'Speed & Silverware',
+    rows: ['ferrari', 'redbull', 'williams'],
+    cols: ['race_winner', 'podiums_10', 'british'],
+  },
+];
+
+export function getDailyGrid(date = new Date()) {
+  const dayIndex = Math.floor(
+    (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+      Date.UTC(2024, 0, 1)) /
+      (1000 * 60 * 60 * 24)
+  );
+  const index = Math.abs(dayIndex) % CURATED_GRIDS.length;
+  return CURATED_GRIDS[index];
+}
+
+export function getRandomGrid() {
+  const index = Math.floor(Math.random() * CURATED_GRIDS.length);
+  return CURATED_GRIDS[index];
+}
+
+export function validateDriverForCell(driver, rowCatKey, colCatKey) {
+  const rowCategory = GRID_CATEGORIES[rowCatKey];
+  const colCategory = GRID_CATEGORIES[colCatKey];
+  if (!rowCategory || !colCategory) return false;
+  return rowCategory.check(driver) && colCategory.check(driver);
+}
+
+export function generateGridShareText(cells, solvedCount, mode = 'Daily') {
+  const gridRows = [0, 1, 2].map((r) => {
+    return [0, 1, 2]
+      .map((c) => {
+        const cell = cells[`${r}-${c}`];
+        return cell ? '🟩' : '⬛';
+      })
+      .join('');
+  });
+
+  return `🏎️ PaddockDle Grid (${mode}) - ${solvedCount}/9 Immaculate Cells!\n\n${gridRows.join(
+    '\n'
+  )}\n\nhttps://react-nexus.web.app/paddockdle-grid`;
+}
+
+// ==========================================
+// PADDOCKDLE CAREER (TIMELINE GUESSER) DATA
+// ==========================================
+
+export function getDailyCareerDriver(date = new Date()) {
+  const dayIndex = Math.floor(
+    (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+      Date.UTC(2024, 0, 1)) /
+      (1000 * 60 * 60 * 24)
+  );
+  // Shift by 7 so classic and career aren't always the same driver on the same day
+  const index = Math.abs(dayIndex + 7) % F1_DRIVERS.length;
+  return F1_DRIVERS[index];
+}
+
+export function getRandomCareerDriver() {
+  const index = Math.floor(Math.random() * F1_DRIVERS.length);
+  return F1_DRIVERS[index];
+}
+
+export function generateCareerClues(driver) {
+  return [
+    {
+      step: 1,
+      title: 'Debut Team & Entry Year',
+      value: `${driver.careerPath[0].team} (${driver.careerPath[0].years})`,
+      hint: `Entered F1 around ${driver.debutYear}`,
+      icon: 'Flag',
+    },
+    {
+      step: 2,
+      title: 'Career Trajectory / Teams',
+      value: driver.careerPath.map((c) => `${c.team} (${c.years})`).join(' ➔ '),
+      hint: `${driver.teams.length} distinct teams in Formula 1`,
+      icon: 'GitFork',
+    },
+    {
+      step: 3,
+      title: 'Nationality & Heritage',
+      value: `${driver.flag} ${driver.nationality}`,
+      hint: `Engine heritage: ${driver.engine}`,
+      icon: 'Globe',
+    },
+    {
+      step: 4,
+      title: 'Podiums & Victories',
+      value: `${driver.podiums} Podiums • ${driver.raceWins} Grand Prix Wins`,
+      hint: driver.raceWins > 0 ? `Race Winner with ${driver.raceWins} GP triumphs` : 'Seeking first GP victory',
+      icon: 'Trophy',
+    },
+    {
+      step: 5,
+      title: 'Championships & Driver Code',
+      value: `${driver.championships > 0 ? `${driver.championships}x World Champion 🏆` : 'Non-Champion'} • Code: ${driver.code} (#${driver.number})`,
+      hint: `Age ${driver.age}`,
+      icon: 'Award',
+    },
+  ];
+}
+
+export function generateCareerShareText(driver, step, isWon, mode = 'Daily') {
+  const score = isWon ? (6 - step) * 200 : 0;
+  const boxes = [1, 2, 3, 4, 5]
+    .map((s) => (s < step ? '🟥' : s === step && isWon ? '🟩' : '⬜'))
+    .join('');
+
+  return `🏎️ PaddockDle Career (${mode})\n${isWon ? `Identified in Clue ${step}/5!` : 'DNF (Out of clues)'}\nScore: ${score} pts\n${boxes}\n\nhttps://react-nexus.web.app/paddockdle-career`;
 }
