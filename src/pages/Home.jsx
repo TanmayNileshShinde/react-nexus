@@ -98,6 +98,16 @@ const GAMES = [
     badge: 'F1 Stats',
   },
   {
+    id: 'paddockdle',
+    title: 'PaddockDle F1',
+    category: 'Formula 1',
+    desc: 'Daily F1 mystery driver Wordle with telemetry attribute clues and hints.',
+    path: '/paddockdle',
+    icon: Flame,
+    color: '#e10600',
+    badge: 'F1 Wordle',
+  },
+  {
     id: 'math',
     title: 'Math Blitz',
     category: 'Speed Math',
