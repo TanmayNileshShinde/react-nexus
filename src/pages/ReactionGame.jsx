@@ -1,5 +1,5 @@
 // src/pages/ReactionGame.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Zap, AlertCircle, RotateCcw, Home } from 'lucide-react';
 import styles from '../styles/Game.module.css';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import styles from '../styles/Game.module.css';
+
 import sound from '../utils/audioFX';
 
 // firebase
@@ -74,7 +74,7 @@ const SnakeGame = () => {
     let newFood;
     while (true) {
       newFood = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
-      // eslint-disable-next-line no-loop-func
+      
       if (!currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) break;
     }
     return newFood;
