@@ -129,7 +129,7 @@ const TicTacToe = () => {
     return move;
   };
 
-  const scores = { X: -10, O: 10, draw: 0 };
+  // const scores = { X: -10, O: 10, draw: 0 };
 
   const minimax = (tempBoard, depth, isMaximizing) => {
     const res = calculateWinner(tempBoard);
