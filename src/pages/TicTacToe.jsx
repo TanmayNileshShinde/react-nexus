@@ -1,5 +1,5 @@
 // src/pages/TicTacToe.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, User, Bot, Users } from 'lucide-react';
 import styles from '../styles/Game.module.css';
@@ -9,6 +9,63 @@ import sound from '../utils/audioFX';
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+
+const calculateWinner = (squares) => {
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) return squares[a];
+  }
+  return null;
+};
+
+const minimax = (tempBoard, depth, isMaximizing) => {
+  const res = calculateWinner(tempBoard);
+  if (res === 'O') return 10;
+  if (res === 'X') return -10;
+  if (tempBoard.every(s => s !== null)) return 0;
+
+  if (isMaximizing) {
+    let bestScore = -Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (tempBoard[i] === null) {
+        tempBoard[i] = 'O';
+        let score = minimax(tempBoard, depth + 1, false);
+        tempBoard[i] = null;
+        bestScore = Math.max(score, bestScore);
+      }
+    }
+    return bestScore;
+  } else {
+    let bestScore = Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (tempBoard[i] === null) {
+        tempBoard[i] = 'X';
+        let score = minimax(tempBoard, depth + 1, true);
+        tempBoard[i] = null;
+        bestScore = Math.min(score, bestScore);
+      }
+    }
+    return bestScore;
+  }
+};
+
+const getBestMove = (currentBoard) => {
+  let bestScore = -Infinity;
+  let move = null;
+  for (let i = 0; i < 9; i++) {
+    if (currentBoard[i] === null) {
+      currentBoard[i] = 'O';
+      let score = minimax(currentBoard, 0, false);
+      currentBoard[i] = null;
+      if (score > bestScore) {
+        bestScore = score;
+        move = i;
+      }
+    }
+  }
+  return move;
+};
 
 const TicTacToe = () => {
   // state
@@ -78,18 +135,11 @@ const TicTacToe = () => {
     }
   };
 
-  // --- 3. GAME LOGIC ---
-  const calculateWinner = (squares) => {
-    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-    for (let i = 0; i < lines.length; i++) {
-      const [a, b, c] = lines[i];
-      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) return squares[a];
-    }
-    return null;
-  };
-
   const winner = calculateWinner(board);
   const isDraw = !winner && board.every((square) => square !== null);
+
+  const makeMoveRef = useRef(null);
+  makeMoveRef.current = makeMove;
 
   // --- 4. ADVANCED AI LOGIC (MINIMAX) ---
   useEffect(() => {
@@ -106,70 +156,13 @@ const TicTacToe = () => {
           moveIndex = getBestMove(board);
         }
 
-        if (moveIndex !== null) makeMove(moveIndex);
+        if (moveIndex !== null && makeMoveRef.current) makeMoveRef.current(moveIndex);
       }, 500); 
       return () => clearTimeout(timer);
     }
-  }, [isXNext, view, winner, board, difficulty]);
+  }, [isXNext, view, winner, isDraw, board, difficulty]);
 
-  const getBestMove = (currentBoard) => {
-    let bestScore = -Infinity;
-    let move = null;
-    for (let i = 0; i < 9; i++) {
-      if (currentBoard[i] === null) {
-        currentBoard[i] = 'O';
-        let score = minimax(currentBoard, 0, false);
-        currentBoard[i] = null;
-        if (score > bestScore) {
-          bestScore = score;
-          move = i;
-        }
-      }
-    }
-    return move;
-  };
-
-  // const scores = { X: -10, O: 10, draw: 0 };
-
-  const minimax = (tempBoard, depth, isMaximizing) => {
-    const res = calculateWinner(tempBoard);
-    if (res === 'O') return 10;
-    if (res === 'X') return -10;
-    if (tempBoard.every(s => s !== null)) return 0;
-
-    if (isMaximizing) {
-      let bestScore = -Infinity;
-      for (let i = 0; i < 9; i++) {
-        if (tempBoard[i] === null) {
-          tempBoard[i] = 'O';
-          let score = minimax(tempBoard, depth + 1, false);
-          tempBoard[i] = null;
-          bestScore = Math.max(score, bestScore);
-        }
-      }
-      return bestScore;
-    } else {
-      let bestScore = Infinity;
-      for (let i = 0; i < 9; i++) {
-        if (tempBoard[i] === null) {
-          tempBoard[i] = 'X';
-          let score = minimax(tempBoard, depth + 1, true);
-          tempBoard[i] = null;
-          bestScore = Math.min(score, bestScore);
-        }
-      }
-      return bestScore;
-    }
-  };
-
-  // --- 5. STATS SAVING ---
-  useEffect(() => {
-    if (view === 'game_ai' && user && (winner || isDraw)) {
-      updateStats(winner === 'X', isDraw);
-    }
-  }, [winner, isDraw]);
-
-  const updateStats = async (isWin, isDrawGame) => {
+  const updateStats = useCallback(async (isWin, isDrawGame) => {
     if (isWin) sound.playVictory(); else if (isDrawGame) sound.playClick(); else sound.playGameOver();
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
@@ -189,7 +182,14 @@ const TicTacToe = () => {
       losses: (!isWin && !isDrawGame) ? increment(1) : increment(0),
       winRate: newRate
     });
-  };
+  }, [user, stats.wins, stats.losses, stats.matches]);
+
+  // --- 5. STATS SAVING ---
+  useEffect(() => {
+    if (view === 'game_ai' && user && (winner || isDraw)) {
+      updateStats(winner === 'X', isDraw);
+    }
+  }, [winner, isDraw, view, user, updateStats]);
 
   const makeMove = (index) => {
     if (board[index] || winner || isDraw) return;

@@ -21,6 +21,7 @@ const ChessGame = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const engine = useRef(null);
+  const makeMoveRef = useRef(null);
 
   // stockfish engine
   useEffect(() => {
@@ -28,7 +29,9 @@ const ChessGame = () => {
     engine.current.onmessage = (e) => {
       if (e.data.startsWith('bestmove')) {
         const bestMove = e.data.split(' ')[1];
-        makeMove(bestMove);
+        if (bestMove && makeMoveRef.current) {
+          makeMoveRef.current(bestMove);
+        }
       }
     };
     return () => engine.current.terminate();
@@ -95,6 +98,7 @@ const ChessGame = () => {
     } catch { return null; }
     return null;
   };
+  makeMoveRef.current = makeMove;
 
   const updateStats = async (isWin) => {
     if (!user) return;

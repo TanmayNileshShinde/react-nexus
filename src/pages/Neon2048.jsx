@@ -27,6 +27,34 @@ const getTileStyle = (val) => {
   return styles[val] || { bg: 'rgba(255, 255, 255, 0.9)', color: '#000', shadow: '0 0 50px #fff' };
 };
 
+const getEmptyCoordinates = (currentBoard) => {
+  let emptyCoords = [];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) { if (currentBoard[r][c] === 0) emptyCoords.push({ r, c }); }
+  }
+  return emptyCoords;
+};
+
+const spawnRandomTile = (currentBoard) => {
+  let emptyCoords = getEmptyCoordinates(currentBoard);
+  if (emptyCoords.length === 0) return currentBoard;
+  let randomCoord = emptyCoords[Math.floor(Math.random() * emptyCoords.length)];
+  let newBoard = currentBoard.map(row => [...row]);
+  newBoard[randomCoord.r][randomCoord.c] = Math.random() < 0.9 ? 2 : 4;
+  return newBoard;
+};
+
+const checkGameOver = (currentBoard) => {
+  if (getEmptyCoordinates(currentBoard).length > 0) return false;
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      if (c !== 3 && currentBoard[r][c] === currentBoard[r][c + 1]) return false;
+      if (r !== 3 && currentBoard[r][c] === currentBoard[r + 1][c]) return false;
+    }
+  }
+  return true;
+};
+
 const Neon2048 = () => {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('menu'); 
@@ -65,23 +93,6 @@ const Neon2048 = () => {
     finally { setIsLoading(false); }
   };
 
-  const getEmptyCoordinates = (currentBoard) => {
-    let emptyCoords = [];
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) { if (currentBoard[r][c] === 0) emptyCoords.push({ r, c }); }
-    }
-    return emptyCoords;
-  };
-
-  const spawnRandomTile = (currentBoard) => {
-    let emptyCoords = getEmptyCoordinates(currentBoard);
-    if (emptyCoords.length === 0) return currentBoard;
-    let randomCoord = emptyCoords[Math.floor(Math.random() * emptyCoords.length)];
-    let newBoard = currentBoard.map(row => [...row]);
-    newBoard[randomCoord.r][randomCoord.c] = Math.random() < 0.9 ? 2 : 4;
-    return newBoard;
-  };
-
   const resetGame = () => {
     let newBoard = Array(4).fill().map(() => Array(4).fill(0));
     newBoard = spawnRandomTile(newBoard);
@@ -91,25 +102,14 @@ const Neon2048 = () => {
     setIsGameOver(false);
   };
 
-  const checkGameOver = (currentBoard) => {
-    if (getEmptyCoordinates(currentBoard).length > 0) return false;
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) {
-        if (c !== 3 && currentBoard[r][c] === currentBoard[r][c + 1]) return false;
-        if (r !== 3 && currentBoard[r][c] === currentBoard[r + 1][c]) return false;
-      }
-    }
-    return true;
-  };
-
-  const handleGameOver = async (finalScore) => {
+  const handleGameOver = useCallback(async (finalScore) => {
     setIsGameOver(true);
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     const isNewHighScore = finalScore > stats.neon2048HighScore;
     setStats(prev => ({ ...prev, neon2048HighScore: isNewHighScore ? finalScore : prev.neon2048HighScore, neon2048Matches: prev.neon2048Matches + 1 }));
     await updateDoc(userRef, { neon2048Matches: increment(1), ...(isNewHighScore && { neon2048HighScore: finalScore }) });
-  };
+  }, [user, stats.neon2048HighScore]);
 
   const move = useCallback((direction) => {
     if (isGameOver || view !== 'game') return;
@@ -172,7 +172,7 @@ const Neon2048 = () => {
       setScore(s => s + pointsEarned);
       if (checkGameOver(newBoard)) handleGameOver(score + pointsEarned);
     }
-  }, [board, isGameOver, view, score]);
+  }, [board, isGameOver, view, score, handleGameOver]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
