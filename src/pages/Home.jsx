@@ -75,7 +75,7 @@ const GAMES = [
     path: '/reaction',
     icon: Zap,
     color: '#f59e0b',
-    badge: 'Miliseconds',
+    badge: 'Milliseconds',
   },
   {
     id: 'memory',

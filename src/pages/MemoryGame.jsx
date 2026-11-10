@@ -1,5 +1,5 @@
 // src/pages/MemoryGame.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
 import styles from '../styles/Game.module.css';
@@ -149,12 +149,12 @@ const MemoryGame = () => {
     }
   };
 
-  const updateStats = async () => {
+  const updateStats = useCallback(async () => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     await updateDoc(userRef, { f1_wins: increment(1), f1_matches: increment(1) });
     setStats(prev => ({ ...prev, f1_wins: prev.f1_wins + 1 }));
-  };
+  }, [user]);
 
   // Check Win Condition
   useEffect(() => {
@@ -162,7 +162,7 @@ const MemoryGame = () => {
       setGameState('won');
       if (user) updateStats();
     }
-  }, [solved]);
+  }, [solved, cards.length, gameState, user, updateStats]);
 
   // --- RENDER ---
   return (

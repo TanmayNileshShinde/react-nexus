@@ -29,6 +29,7 @@ const SnakeGame = () => {
   const [score, setScore] = useState(0);
 
   const dirRef = useRef(dir);
+  const gameOverRef = useRef(null);
   
   // --- 1. AUTH & DATA SYNC ---
   const handleLogin = async () => {
@@ -109,6 +110,7 @@ const SnakeGame = () => {
       ...(isNewHighScore && { snakeHighScore: score })
     });
   };
+  gameOverRef.current = gameOver;
 
   // game loop
   useEffect(() => {
@@ -120,12 +122,12 @@ const SnakeGame = () => {
         const newHead = { x: head.x + dirRef.current.x, y: head.y + dirRef.current.y };
 
         if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
-          gameOver();
+          if (gameOverRef.current) gameOverRef.current();
           return prev;
         }
 
         if (prev.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
-          gameOver();
+          if (gameOverRef.current) gameOverRef.current();
           return prev;
         }
 
@@ -147,14 +149,14 @@ const SnakeGame = () => {
     return () => clearInterval(intervalId);
   }, [view, isGameOver, food, generateFood]);
 
-  const handleDirChange = (x, y) => {
+  const handleDirChange = useCallback((x, y) => {
     if (view !== 'game' || isGameOver) return;
     const current = dirRef.current;
     if (x !== 0 && current.x === -x) return;
     if (y !== 0 && current.y === -y) return;
     sound.playMove();
     dirRef.current = { x, y };
-  };
+  }, [view, isGameOver]);
 
   // keyboard controls
   useEffect(() => {
@@ -172,7 +174,7 @@ const SnakeGame = () => {
     };
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [view, isGameOver]);
+  }, [handleDirChange]);
 
   // ui components
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
