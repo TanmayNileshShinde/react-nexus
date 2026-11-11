@@ -5,6 +5,7 @@
   <a href="https://github.com/TanmayNileshShinde/react-nexus/stargazers"><img src="https://img.shields.io/github/stars/TanmayNileshShinde/react-nexus?style=for-the-badge&logo=github&color=ffb86c" alt="Stars" /></a>
   <a href="https://github.com/TanmayNileshShinde/react-nexus/network/members"><img src="https://img.shields.io/github/forks/TanmayNileshShinde/react-nexus?style=for-the-badge&logo=github&color=8be9fd" alt="Forks" /></a>
   <a href="./SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy-2ea44f?style=for-the-badge&logo=shield" alt="Security Policy" /></a>
+  <a href="https://hub.xerj.org/contributors/Antara-Parab"><img src="https://hub.xerj.org/contributors/Antara-Parab/badge.svg" alt="XERJ Corpus Hub contributor" /></a>
 </p>
 
 **React Nexus** is a full-stack, web-based arcade hub featuring 8 custom-built mini-games. Built as a culmination of my Computer Engineering diploma studies, this platform combines retro gaming nostalgia with modern web architecture, including real-time global leaderboards and a custom "Glassmorphism" UI.
@@ -94,6 +95,14 @@ The app will run at http://localhost:5173
 The application utilizes a flat routing structure managed by React Router. The main UI acts as a portal, loading individual game components on demand to keep the initial bundle size light. Firebase logic is centralized, allowing multiple games to tap into the same authentication state and Firestore collections without redundant code.
 
 ---
+
+## 🤝 Contributors
+
+* **Antara Parab** ([@Antara-Parab](https://github.com/Antara-Parab))  
+  [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/Antara-Parab/badge.svg)](https://hub.xerj.org/contributors/Antara-Parab)
+
+---
+
 ## 👤 Contact
 Tanmay Nilesh Shinde
 
