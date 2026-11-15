@@ -1,5 +1,5 @@
 // src/pages/ReactionGame.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Zap, AlertCircle, RotateCcw, Home } from 'lucide-react';
 import styles from '../styles/Game.module.css';
@@ -20,6 +20,20 @@ const ReactionGame = () => {
   const [resultTime, setResultTime] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const timerRef = useRef(null);
+  const tickTimeoutsRef = useRef([]);
+
+  const clearAllTimers = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    tickTimeoutsRef.current.forEach((t) => clearTimeout(t));
+    tickTimeoutsRef.current = [];
+  };
+
+  useEffect(() => {
+    return () => clearAllTimers();
+  }, []);
 
   // --- AUTH ---
   const handleLogin = async () => {
@@ -38,12 +52,14 @@ const ReactionGame = () => {
 
   // --- GAME LOGIC ---
   const startSequence = () => {
+    clearAllTimers();
     setView('game');
     setGameState('counting');
     setLights(0);
     setResultTime(null);
     for (let i = 1; i <= 5; i++) {
-      setTimeout(() => { setLights(i); sound.playTick(); }, i * 1000);
+      const t = setTimeout(() => { setLights(i); sound.playTick(); }, i * 1000);
+      tickTimeoutsRef.current.push(t);
     }
     const randomDelay = Math.floor(Math.random() * 3000) + 2000;
     timerRef.current = setTimeout(() => {
@@ -56,7 +72,7 @@ const ReactionGame = () => {
 
   const handleReaction = () => {
     if (gameState === 'counting') {
-      clearTimeout(timerRef.current);
+      clearAllTimers();
       sound.playFoul();
       setGameState('foul');
       setLights(5);

@@ -200,6 +200,16 @@ class SoundEngine {
       });
     } catch (e) { void e; }
   }
+
+  /** Success chime / puzzle solved */
+  playSuccess() {
+    this.playVictory();
+  }
+
+  /** Subtle UI audio beep / clipboard share */
+  playBeep() {
+    this.tone(750, 'sine', 0.08, 650, 850);
+  }
 }
 
 export const sound = new SoundEngine();
