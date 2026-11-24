@@ -93,7 +93,7 @@ const ChessGame = () => {
           const isDraw = gameCopy.isDraw();
           if (!isDraw) updateStats(won);
         }
-        return result;
+        return gameCopy;
       }
     } catch { return null; }
     return null;
@@ -120,13 +120,15 @@ const ChessGame = () => {
 
   const onDrop = (source, target) => {
     const move = { from: source, to: target, promotion: 'q' };
-    const result = makeMove(move);
-    if (!result) return false;
+    const updatedGame = makeMove(move);
+    if (!updatedGame) return false;
 
-    if (view === 'game_ai' && !game.isGameOver()) {
+    if (view === 'game_ai' && !updatedGame.isGameOver()) {
       setTimeout(() => {
-        engine.current.postMessage(`position fen ${game.fen()}`);
-        engine.current.postMessage(`go depth ${difficulty * 2}`);
+        if (engine.current) {
+          engine.current.postMessage(`position fen ${updatedGame.fen()}`);
+          engine.current.postMessage(`go depth ${difficulty * 2}`);
+        }
       }, 500);
     }
     return true;

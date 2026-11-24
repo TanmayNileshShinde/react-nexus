@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, ChevronUp, ChevronDown, Flag } from 'lucide-react';
+import sound from '../utils/audioFX';
 
 // firebase
 import { auth, googleProvider, db } from '../firebase';
@@ -84,6 +85,7 @@ const F1HigherLower = () => {
   };
 
   const resetGame = () => {
+    sound.playClick();
     const first = getRandomDriver(null);
     setCurrentDriver(first);
     setNextDriver(getRandomDriver(first));
@@ -93,6 +95,7 @@ const F1HigherLower = () => {
   };
 
   const gameOver = async () => {
+    sound.playGameOver();
     setIsGameOver(true);
     if (!user) return;
 
@@ -105,6 +108,7 @@ const F1HigherLower = () => {
 
   const handleGuess = (guessType) => {
     if (revealMode || isGameOver) return;
+    sound.playClick();
     setRevealMode(true);
 
     const isHigher = nextDriver.podiums >= currentDriver.podiums;
@@ -116,6 +120,7 @@ const F1HigherLower = () => {
 
     setTimeout(() => {
       if (isCorrect) {
+        sound.playScore();
         setScore(s => s + 1);
         setCurrentDriver(nextDriver);
         setNextDriver(getRandomDriver(nextDriver));

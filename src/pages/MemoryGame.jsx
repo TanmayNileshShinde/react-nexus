@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
 import styles from '../styles/Game.module.css';
+import sound from '../utils/audioFX';
 
 // firebase
 import { auth, googleProvider, db } from '../firebase';
@@ -111,23 +112,15 @@ const MemoryGame = () => {
   const handleClick = (id) => {
     if (disabled || flipped.includes(id) || solved.includes(id) || gameState !== 'playing') return;
     
-    // Decrease Move Count
-    const newMoves = movesLeft - 1;
-    setMovesLeft(newMoves);
-
-    // Check Loss
-    if (newMoves === 0) {
-      setGameState('lost');
-      setDisabled(true);
-      return;
-    }
-
-    // Flip Logic
+    // First card flip
     if (flipped.length === 0) {
+      sound.playClick();
       setFlipped([id]);
       return;
     }
 
+    // Second card flip (completes a turn)
+    sound.playClick();
     setFlipped([flipped[0], id]);
     setDisabled(true);
 
@@ -136,12 +129,23 @@ const MemoryGame = () => {
 
     if (firstCard.name === secondCard.name) {
       // MATCH FOUND
+      sound.playScore();
       setSolved((prev) => [...prev, flipped[0], id]);
       setFlipped([]);
       setDisabled(false);
       setMovesLeft((prev) => prev + 2); // Bonus Moves!
     } else {
-      // NO MATCH
+      // NO MATCH: decrement remaining moves
+      const newMoves = movesLeft - 1;
+      setMovesLeft(newMoves);
+
+      if (newMoves <= 0) {
+        sound.playGameOver();
+        setGameState('lost');
+        setDisabled(true);
+        return;
+      }
+
       setTimeout(() => {
         setFlipped([]);
         setDisabled(false);
@@ -159,6 +163,7 @@ const MemoryGame = () => {
   // Check Win Condition
   useEffect(() => {
     if (gameState === 'playing' && cards.length > 0 && solved.length === cards.length) {
+      sound.playVictory();
       setGameState('won');
       if (user) updateStats();
     }

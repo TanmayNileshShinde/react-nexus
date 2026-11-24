@@ -138,6 +138,15 @@ const TicTacToe = () => {
   const winner = calculateWinner(board);
   const isDraw = !winner && board.every((square) => square !== null);
 
+  const makeMove = (index) => {
+    if (board[index] || winner || isDraw) return;
+    const newBoard = [...board];
+    sound.playMove();
+    newBoard[index] = isXNext ? 'X' : 'O';
+    setBoard(newBoard);
+    setIsXNext(!isXNext);
+  };
+
   const makeMoveRef = useRef(null);
   makeMoveRef.current = makeMove;
 
@@ -191,14 +200,6 @@ const TicTacToe = () => {
     }
   }, [winner, isDraw, view, user, updateStats]);
 
-  const makeMove = (index) => {
-    if (board[index] || winner || isDraw) return;
-    const newBoard = [...board];
-    sound.playMove();
-    newBoard[index] = isXNext ? 'X' : 'O';
-    setBoard(newBoard);
-    setIsXNext(!isXNext);
-  };
 
   const handleUserClick = (index) => {
     if (view === 'game_ai' && !isXNext) return;
