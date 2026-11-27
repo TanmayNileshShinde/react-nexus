@@ -11,6 +11,7 @@ import {
   Sparkles,
   AlertCircle,
   Search,
+  Trophy,
 } from 'lucide-react';
 import PaddockNav from '../components/PaddockNav';
 import {
@@ -20,6 +21,7 @@ import {
   getRandomGrid,
   validateDriverForCell,
   generateGridShareText,
+  getLocalDateKey,
 } from '../utils/f1PaddockData';
 import { useSound } from '../context/SoundContext';
 import '../styles/paddockdle.css';
@@ -42,8 +44,22 @@ const F1PaddockGrid = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const searchInputRef = useRef(null);
+  const feedbackTimeoutRef = useRef(null);
+  const isSubmittingRef = useRef(false);
+
+  const clearFeedbackTimer = () => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
+    isSubmittingRef.current = false;
+    setIsSubmitting(false);
+  };
+
+  useEffect(() => () => clearFeedbackTimer(), []);
 
   const [stats, setStats] = useState(() => {
     try {
@@ -58,7 +74,7 @@ const F1PaddockGrid = () => {
 
   useEffect(() => {
     if (mode === 'daily') {
-      const todayKey = `nexus_f1_grid_daily_${new Date().toISOString().slice(0, 10)}`;
+      const todayKey = `nexus_f1_grid_daily_${getLocalDateKey()}`;
       const savedDaily = localStorage.getItem(todayKey);
       if (savedDaily) {
         try {
@@ -99,7 +115,7 @@ const F1PaddockGrid = () => {
   const solvedCount = Object.keys(solvedCells).length;
 
   const handleCellClick = (r, c) => {
-    if (isGameOver) return;
+    if (isGameOver || isSubmittingRef.current) return;
     const key = `${r}-${c}`;
     if (solvedCells[key]) return;
     if (guessesLeft <= 0) return;
@@ -111,7 +127,9 @@ const F1PaddockGrid = () => {
   };
 
   const handleSelectDriver = (driver) => {
-    if (!selectedCell || isGameOver) return;
+    if (!selectedCell || isGameOver || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     const { r, c } = selectedCell;
     const cellKey = `${r}-${c}`;
 
@@ -145,7 +163,7 @@ const F1PaddockGrid = () => {
       }
 
       if (mode === 'daily') {
-        const todayKey = `nexus_f1_grid_daily_${new Date().toISOString().slice(0, 10)}`;
+        const todayKey = `nexus_f1_grid_daily_${getLocalDateKey()}`;
         localStorage.setItem(
           todayKey,
           JSON.stringify({
@@ -157,7 +175,11 @@ const F1PaddockGrid = () => {
         );
       }
 
-      setTimeout(() => {
+      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = setTimeout(() => {
+        feedbackTimeoutRef.current = null;
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
         setSelectedCell(null);
         setFeedback(null);
       }, 700);
@@ -174,7 +196,7 @@ const F1PaddockGrid = () => {
       }
 
       if (mode === 'daily') {
-        const todayKey = `nexus_f1_grid_daily_${new Date().toISOString().slice(0, 10)}`;
+        const todayKey = `nexus_f1_grid_daily_${getLocalDateKey()}`;
         localStorage.setItem(
           todayKey,
           JSON.stringify({
@@ -186,7 +208,11 @@ const F1PaddockGrid = () => {
         );
       }
 
-      setTimeout(() => {
+      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = setTimeout(() => {
+        feedbackTimeoutRef.current = null;
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
         setSelectedCell(null);
         setFeedback(null);
       }, 1000);
@@ -213,6 +239,7 @@ const F1PaddockGrid = () => {
   };
 
   const handleResetGame = () => {
+    clearFeedbackTimer();
     sound?.playMove?.();
     const newGrid = getRandomGrid();
     setActiveGrid(newGrid);
@@ -224,14 +251,18 @@ const F1PaddockGrid = () => {
     setFeedback(null);
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     sound?.playBeep?.();
     const text = generateGridShareText(
       solvedCells,
       solvedCount,
       mode === 'daily' ? 'Daily' : 'Practice'
     );
-    navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Ignore clipboard permission errors
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -437,7 +468,11 @@ const F1PaddockGrid = () => {
                 </h4>
               </div>
               <button
-                onClick={() => setSelectedCell(null)}
+                onClick={() => {
+                  clearFeedbackTimer();
+                  setSelectedCell(null);
+                  setFeedback(null);
+                }}
                 className="paddock-icon-btn"
                 style={{ width: '28px', height: '28px' }}
               >
@@ -484,9 +519,14 @@ const F1PaddockGrid = () => {
                 filteredDrivers.map((driver) => (
                   <button
                     key={driver.id}
+                    disabled={isSubmitting}
                     onClick={() => handleSelectDriver(driver)}
                     className="paddock-dropdown-item"
-                    style={{ padding: '8px 10px', border: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{
+                      padding: '8px 10px',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      opacity: isSubmitting ? 0.6 : 1,
+                    }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '1.2rem' }}>{driver.flag}</span>

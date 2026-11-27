@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, RefreshCw, Trophy, User, Flag, AlertTriangle } from 'lucide-react';
@@ -60,8 +60,19 @@ export default function MemoryGame() {
 
   const [stats, setStats] = useState({ f1_wins: 0, f1_matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const mismatchTimeoutRef = useRef(null);
 
-  const shuffleCards = () => {
+  const clearMismatchTimeout = useCallback(() => {
+    if (mismatchTimeoutRef.current) {
+      clearTimeout(mismatchTimeoutRef.current);
+      mismatchTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearMismatchTimeout(), [clearMismatchTimeout]);
+
+  const shuffleCards = useCallback(() => {
+    clearMismatchTimeout();
     const shuffledPool = [...ALL_DRIVERS].sort(() => 0.5 - Math.random());
     const selectedDrivers = shuffledPool.slice(0, 8);
     const deck = [...selectedDrivers, ...selectedDrivers]
@@ -74,11 +85,11 @@ export default function MemoryGame() {
     setMovesLeft(MAX_MOVES);
     setGameState('playing');
     setDisabled(false);
-  };
+  }, [clearMismatchTimeout]);
 
   useEffect(() => {
     shuffleCards();
-  }, []);
+  }, [shuffleCards]);
 
   const handleLogin = async () => {
     try {
@@ -116,11 +127,33 @@ export default function MemoryGame() {
   const fetchLeaderboard = async () => {
     emitFeedback('tap');
     setView('leaderboard');
-    const q = query(collection(db, 'users'), orderBy('f1_wins', 'desc'), limit(10));
-    const querySnapshot = await getDocs(q);
-    const data = querySnapshot.docs.map((d) => ({ ...d.data(), f1_wins: d.data().f1_wins || 0 }));
-    setLeaderboardData(data);
+    try {
+      const q = query(collection(db, 'users'), orderBy('f1_wins', 'desc'), limit(10));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map((d) => ({ ...d.data(), f1_wins: d.data().f1_wins || 0 }));
+      setLeaderboardData(data);
+    } catch (error) {
+      console.error('Failed to fetch memory leaderboard', error);
+    }
   };
+
+  const recordMatchOutcome = useCallback(async (isWin) => {
+    if (!user) return;
+    const userRef = doc(db, 'users', user.uid);
+    setStats((prev) => ({
+      ...prev,
+      f1_wins: isWin ? (prev.f1_wins || 0) + 1 : (prev.f1_wins || 0),
+      f1_matches: (prev.f1_matches || 0) + 1,
+    }));
+    try {
+      await updateDoc(userRef, {
+        ...(isWin && { f1_wins: increment(1) }),
+        f1_matches: increment(1),
+      });
+    } catch (error) {
+      console.error('Failed to update memory stats', error);
+    }
+  }, [user]);
 
   const handleCardPointerDown = (id) => {
     if (disabled || flipped.includes(id) || solved.includes(id) || gameState !== 'playing') return;
@@ -139,7 +172,10 @@ export default function MemoryGame() {
     const secondCard = cards.find((c) => c.u_id === id);
 
     if (firstCard.name === secondCard.name) {
-      emitFeedback('success');
+      const nextSolvedCount = solved.length + 2;
+      if (nextSolvedCount < cards.length) {
+        emitFeedback('success');
+      }
       setSolved((prev) => [...prev, flipped[0], id]);
       setFlipped([]);
       setDisabled(false);
@@ -153,30 +189,26 @@ export default function MemoryGame() {
         sound.playGameOver();
         setGameState('lost');
         setDisabled(true);
+        recordMatchOutcome(false);
         return;
       }
 
-      setTimeout(() => {
+      clearMismatchTimeout();
+      mismatchTimeoutRef.current = setTimeout(() => {
+        mismatchTimeoutRef.current = null;
         setFlipped([]);
         setDisabled(false);
       }, 650);
     }
   };
 
-  const updateStats = useCallback(async () => {
-    if (!user) return;
-    const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, { f1_wins: increment(1), f1_matches: increment(1) });
-    setStats((prev) => ({ ...prev, f1_wins: prev.f1_wins + 1 }));
-  }, [user]);
-
   useEffect(() => {
     if (gameState === 'playing' && cards.length > 0 && solved.length === cards.length) {
       sound.playVictory();
       setGameState('won');
-      if (user) updateStats();
+      recordMatchOutcome(true);
     }
-  }, [solved, cards.length, gameState, user, updateStats]);
+  }, [solved, cards.length, gameState, recordMatchOutcome]);
 
   return (
     <motion.div
@@ -234,7 +266,7 @@ export default function MemoryGame() {
             {!user ? (
               <button
                 type="button"
-                onPointerDown={handleLogin}
+                onClick={handleLogin}
                 style={{
                   background: '#f5f7fa',
                   color: '#0b0d12',
@@ -407,13 +439,13 @@ export default function MemoryGame() {
                 <ArrowLeft size={16} strokeWidth={1.75} /> Library
               </button>
             </Link>
-            <button type="button" className={styles.button} onPointerDown={fetchLeaderboard} style={{ flex: 1 }}>
+            <button type="button" className={styles.button} onClick={fetchLeaderboard} style={{ flex: 1 }}>
               <Trophy size={16} strokeWidth={1.75} /> Ranks
             </button>
             <button
               type="button"
               className={styles.button}
-              onPointerDown={() => {
+              onClick={() => {
                 emitFeedback('tap');
                 shuffleCards();
               }}
@@ -430,7 +462,7 @@ export default function MemoryGame() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               type="button"
-              onPointerDown={() => {
+              onClick={() => {
                 emitFeedback('tap');
                 setView('game');
               }}
@@ -472,7 +504,7 @@ export default function MemoryGame() {
                     #{index + 1}
                   </span>
                   {player.photoURL && (
-                    <img src={player.photoURL} alt={player.displayName} style={{ width: 32, height: 32, borderRadius: '50%' }} />
+                    <img src={player.photoURL} alt={player.displayName} referrerPolicy="no-referrer" style={{ width: 32, height: 32, borderRadius: '50%' }} />
                   )}
                   <span style={{ fontWeight: 500, color: '#f5f7fa' }}>{player.displayName}</span>
                 </div>

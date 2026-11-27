@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, User, Bot, Users } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Bot, Users } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import { getBestChessMove } from '../utils/chessAI';
 import styles from '../styles/Game.module.css';
 
 // firebase
@@ -20,22 +21,23 @@ const ChessGame = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const engine = useRef(null);
+  const aiTimeoutRef = useRef(null);
   const makeMoveRef = useRef(null);
 
-  // stockfish engine
-  useEffect(() => {
-    engine.current = new Worker('/stockfish.js');
-    engine.current.onmessage = (e) => {
-      if (e.data.startsWith('bestmove')) {
-        const bestMove = e.data.split(' ')[1];
-        if (bestMove && makeMoveRef.current) {
-          makeMoveRef.current(bestMove);
-        }
-      }
-    };
-    return () => engine.current.terminate();
-  }, []);
+  const clearAiTimeout = () => {
+    if (aiTimeoutRef.current) {
+      clearTimeout(aiTimeoutRef.current);
+      aiTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearAiTimeout(), []);
+
+  const resetChess = (nextView) => {
+    clearAiTimeout();
+    setGame(new Chess());
+    if (nextView) setView(nextView);
+  };
 
   // --- 2. AUTH & DATA SYNC ---
   const handleLogin = async () => {
@@ -56,7 +58,11 @@ const ChessGame = () => {
         setStats(initialData);
       } else {
         const data = docSnap.data();
-        setStats(data);
+        setStats({
+          chessWins: data.chessWins || 0,
+          chessLosses: data.chessLosses || 0,
+          chessMatches: data.chessMatches || 0,
+        });
       }
     } catch (error) {
       console.error("Login failed", error);
@@ -111,25 +117,36 @@ const ChessGame = () => {
       chessMatches: prev.chessMatches + 1
     }));
 
-    await updateDoc(userRef, {
-      chessMatches: increment(1),
-      chessWins: isWin ? increment(1) : increment(0),
-      chessLosses: !isWin ? increment(1) : increment(0)
-    });
+    try {
+      await updateDoc(userRef, {
+        chessMatches: increment(1),
+        chessWins: isWin ? increment(1) : increment(0),
+        chessLosses: !isWin ? increment(1) : increment(0)
+      });
+    } catch (error) {
+      console.error('Failed to update chess stats', error);
+    }
   };
 
-  const onDrop = (source, target) => {
-    const move = { from: source, to: target, promotion: 'q' };
+  const onDrop = (arg1, arg2) => {
+    const sourceSquare = typeof arg1 === 'object' ? arg1.sourceSquare : arg1;
+    const targetSquare = typeof arg1 === 'object' ? arg1.targetSquare : arg2;
+    if (!targetSquare || (view === 'game_ai' && game.turn() !== 'w')) return false;
+
+    const move = { from: sourceSquare, to: targetSquare, promotion: 'q' };
     const updatedGame = makeMove(move);
     if (!updatedGame) return false;
 
     if (view === 'game_ai' && !updatedGame.isGameOver()) {
-      setTimeout(() => {
-        if (engine.current) {
-          engine.current.postMessage(`position fen ${updatedGame.fen()}`);
-          engine.current.postMessage(`go depth ${difficulty * 2}`);
+      clearAiTimeout();
+      const fenSnapshot = updatedGame.fen();
+      aiTimeoutRef.current = setTimeout(() => {
+        aiTimeoutRef.current = null;
+        const bestMove = getBestChessMove(fenSnapshot, difficulty);
+        if (bestMove && makeMoveRef.current) {
+          makeMoveRef.current(bestMove);
         }
-      }, 500);
+      }, 350);
     }
     return true;
   };
@@ -203,12 +220,12 @@ const ChessGame = () => {
           </div>
 
           <div style={{ width: '100%', marginBottom: '30px', boxShadow: '0 0 50px rgba(255, 215, 0, 0.1)' }}>
-             <Chessboard position={game.fen()} onPieceDrop={onDrop} boardOrientation="white" />
+             <Chessboard options={{ position: game.fen(), onPieceDrop: onDrop, boardOrientation: 'white' }} />
           </div>
 
           <div style={{ display: 'flex', gap: '15px', marginTop: 'auto' }}>
-            <button className={styles.button} onClick={() => {setView('menu'); setGame(new Chess());}} style={{ flex: 1, padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}><ArrowLeft size={18}/> MENU</button>
-            <button className={styles.button} onClick={() => setGame(new Chess())} style={{ flex: 1, padding: '15px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', color: '#ffd700' }}><RefreshCw size={18}/> RESTART</button>
+            <button className={styles.button} onClick={() => resetChess('menu')} style={{ flex: 1, padding: '15px', background: 'rgba(255, 68, 68, 0.1)', border: '1px solid rgba(255, 68, 68, 0.3)' }}><ArrowLeft size={18}/> MENU</button>
+            <button className={styles.button} onClick={() => resetChess()} style={{ flex: 1, padding: '15px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', color: '#ffd700' }}><RefreshCw size={18}/> RESTART</button>
           </div>
         </div>
       )}

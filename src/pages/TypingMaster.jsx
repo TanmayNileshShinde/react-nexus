@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, Keyboard, Terminal } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Terminal } from 'lucide-react';
 
 
 // firebase
@@ -53,6 +53,15 @@ const TypingMaster = () => {
   const [accuracy, setAccuracy] = useState(100);
 
   const inputRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const focusTimeoutRef = useRef(null);
+
+  useEffect(() => () => {
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+      focusTimeoutRef.current = null;
+    }
+  }, []);
 
   // --- 1. AUTH & DATA SYNC ---
   const handleLogin = async () => {
@@ -95,24 +104,34 @@ const TypingMaster = () => {
 
   // game loop
   const resetGame = () => {
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+      focusTimeoutRef.current = null;
+    }
     const randomSnippet = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
     setSnippet(randomSnippet);
     setUserInput("");
+    startTimeRef.current = null;
     setStartTime(null);
     setIsFinished(false);
     setWpm(0);
     setAccuracy(100);
-    setTimeout(() => inputRef.current?.focus(), 100);
+    focusTimeoutRef.current = setTimeout(() => {
+      focusTimeoutRef.current = null;
+      inputRef.current?.focus();
+    }, 100);
   };
 
   const handleTyping = (e) => {
     if (isFinished) return;
-    
-    const val = e.target.value;
-    if (!startTime && val.length > 0) {
-      setStartTime(Date.now());
+
+    const val = e.target.value.slice(0, snippet.length);
+    if (!startTimeRef.current && val.length > 0) {
+      const now = Date.now();
+      startTimeRef.current = now;
+      setStartTime(now);
     }
-    
+
     setUserInput(val);
 
     // Calculate live accuracy
@@ -122,36 +141,41 @@ const TypingMaster = () => {
     }
     setAccuracy(val.length === 0 ? 100 : Math.round((correctChars / val.length) * 100));
 
-    // Check if finished
-    if (val.length === snippet.length) {
+    // Finish only when exact snippet matches completely
+    if (val === snippet) {
       finishGame(val, correctChars);
     }
   };
 
   const finishGame = async (finalInput, _correctChars) => {
     setIsFinished(true);
-    const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
-    
+    const startedAt = startTimeRef.current ?? startTime ?? Date.now();
+    const elapsedMinutes = Math.max(1 / 120, (Date.now() - startedAt) / 60000);
+
     // WPM formula: (characters / 5) / minutes
-    const calculatedWpm = Math.round((finalInput.length / 5) / timeElapsed);
-    const finalWpm = isNaN(calculatedWpm) || calculatedWpm < 0 ? 0 : calculatedWpm;
+    const calculatedWpm = Math.round((finalInput.length / 5) / elapsedMinutes);
+    const finalWpm = Number.isFinite(calculatedWpm) && calculatedWpm >= 0 ? calculatedWpm : 0;
     setWpm(finalWpm);
 
     if (!user) return;
 
     const userRef = doc(db, "users", user.uid);
-    const isNewHighScore = finalWpm > stats.typingWPM;
-    
+    const isNewHighScore = finalWpm > (stats.typingWPM || 0);
+
     setStats(prev => ({
       ...prev,
-      typingWPM: isNewHighScore ? finalWpm : prev.typingWPM,
-      typingMatches: prev.typingMatches + 1
+      typingWPM: isNewHighScore ? finalWpm : (prev.typingWPM || 0),
+      typingMatches: (prev.typingMatches || 0) + 1
     }));
 
-    await updateDoc(userRef, {
-      typingMatches: increment(1),
-      ...(isNewHighScore && { typingWPM: finalWpm })
-    });
+    try {
+      await updateDoc(userRef, {
+        typingMatches: increment(1),
+        ...(isNewHighScore && { typingWPM: finalWpm })
+      });
+    } catch (error) {
+      console.error('Failed to update typing stats', error);
+    }
   };
 
   // ui components
@@ -262,7 +286,6 @@ const TypingMaster = () => {
                     color, 
                     background,
                     borderBottom: isCursor ? '3px solid #00ff88' : 'none',
-                    animation: isCursor ? 'pulse 1s infinite' : 'none'
                   }}>
                     {char}
                   </span>

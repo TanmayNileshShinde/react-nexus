@@ -153,16 +153,20 @@ export default function Neon2048() {
       emitFeedback('foul');
       if (!user) return;
       const userRef = doc(db, 'users', user.uid);
-      const isNewHighScore = finalScore > stats.neon2048HighScore;
+      const isNewHighScore = finalScore > (stats.neon2048HighScore || 0);
       setStats((prev) => ({
         ...prev,
-        neon2048HighScore: isNewHighScore ? finalScore : prev.neon2048HighScore,
-        neon2048Matches: prev.neon2048Matches + 1,
+        neon2048HighScore: isNewHighScore ? finalScore : (prev.neon2048HighScore || 0),
+        neon2048Matches: (prev.neon2048Matches || 0) + 1,
       }));
-      await updateDoc(userRef, {
-        neon2048Matches: increment(1),
-        ...(isNewHighScore && { neon2048HighScore: finalScore }),
-      });
+      try {
+        await updateDoc(userRef, {
+          neon2048Matches: increment(1),
+          ...(isNewHighScore && { neon2048HighScore: finalScore }),
+        });
+      } catch (error) {
+        console.error('Failed to update Neon2048 stats', error);
+      }
     },
     [user, stats.neon2048HighScore]
   );
@@ -233,10 +237,12 @@ export default function Neon2048() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+      if (view !== 'game' || isGameOver) return;
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(key)) {
         e.preventDefault();
       }
-      switch (e.key) {
+      switch (key) {
         case 'ArrowUp':
         case 'w':
           move('UP');
@@ -259,7 +265,7 @@ export default function Neon2048() {
     };
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [move]);
+  }, [move, view, isGameOver]);
 
   // 1:1 Pointer Events board drag with Apple rubberband edge resistance
   const handleBoardPointerDown = (e) => {
@@ -350,7 +356,7 @@ export default function Neon2048() {
             type="button"
             whileTap={TAP_DETENT}
             transition={SPRING_DEFAULT}
-            onPointerDown={() => {
+            onClick={() => {
               setView('game');
               resetGame();
             }}
@@ -379,7 +385,7 @@ export default function Neon2048() {
             type="button"
             whileTap={TAP_DETENT}
             transition={SPRING_DEFAULT}
-            onPointerDown={fetchLeaderboard}
+            onClick={fetchLeaderboard}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -443,7 +449,7 @@ export default function Neon2048() {
             {!user ? (
               <button
                 type="button"
-                onPointerDown={handleLogin}
+                onClick={handleLogin}
                 style={{
                   background: '#f5f7fa',
                   color: '#0b0d12',
@@ -582,7 +588,7 @@ export default function Neon2048() {
                   key={ctrl.dir}
                   type="button"
                   aria-label={`Move ${ctrl.dir}`}
-                  onPointerDown={() => move(ctrl.dir)}
+                  onClick={() => move(ctrl.dir)}
                   style={{
                     width: '38px',
                     height: '38px',
@@ -603,7 +609,7 @@ export default function Neon2048() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
-                onPointerDown={() => {
+                onClick={() => {
                   emitFeedback('tap');
                   setView('menu');
                   setIsGameOver(false);
@@ -623,7 +629,7 @@ export default function Neon2048() {
               </button>
               <button
                 type="button"
-                onPointerDown={resetGame}
+                onClick={resetGame}
                 style={{
                   height: '38px',
                   padding: '0 14px',
@@ -651,7 +657,7 @@ export default function Neon2048() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               type="button"
-              onPointerDown={() => {
+              onClick={() => {
                 emitFeedback('tap');
                 setView('menu');
               }}

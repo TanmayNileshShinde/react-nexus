@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Play } from 'lucide-react';
 
 import sound from '../utils/audioFX';
 
@@ -24,11 +24,14 @@ const SnakeGame = () => {
   // state
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [food, setFood] = useState({ x: 5, y: 5 });
-  const [dir, setDir] = useState(INITIAL_DIRECTION);
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState(0);
 
-  const dirRef = useRef(dir);
+  const snakeRef = useRef(INITIAL_SNAKE);
+  const foodRef = useRef({ x: 5, y: 5 });
+  const scoreRef = useRef(0);
+  const dirRef = useRef(INITIAL_DIRECTION);
+  const dirQueueRef = useRef([]);
   const gameOverRef = useRef(null);
   
   // --- 1. AUTH & DATA SYNC ---
@@ -72,43 +75,57 @@ const SnakeGame = () => {
 
   // game loop
   const generateFood = useCallback((currentSnake) => {
-    let newFood;
-    while (true) {
-      newFood = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
-      
-      if (!currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) break;
+    const occupied = new Set(currentSnake.map((seg) => `${seg.x},${seg.y}`));
+    const emptyCells = [];
+    for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < GRID_SIZE; x++) {
+        if (!occupied.has(`${x},${y}`)) {
+          emptyCells.push({ x, y });
+        }
+      }
     }
-    return newFood;
+    if (emptyCells.length === 0) return null;
+    return emptyCells[Math.floor(Math.random() * emptyCells.length)];
   }, []);
 
   const resetGame = () => {
     sound.playClick();
-    setSnake(INITIAL_SNAKE);
-    setDir(INITIAL_DIRECTION);
+    const initialFood = generateFood(INITIAL_SNAKE) || { x: 5, y: 5 };
+    snakeRef.current = INITIAL_SNAKE;
+    foodRef.current = initialFood;
+    scoreRef.current = 0;
     dirRef.current = INITIAL_DIRECTION;
-    setFood(generateFood(INITIAL_SNAKE));
+    dirQueueRef.current = [];
+    setSnake(INITIAL_SNAKE);
+    setFood(initialFood);
     setScore(0);
     setIsGameOver(false);
   };
 
-  const gameOver = async () => {
-    sound.playGameOver();
+  const gameOver = async (isBoardCleared = false) => {
+    if (isBoardCleared) sound.playVictory();
+    else sound.playGameOver();
     setIsGameOver(true);
     if (!user) return;
 
+    const finalScore = scoreRef.current;
     const userRef = doc(db, "users", user.uid);
-    const isNewHighScore = score > stats.snakeHighScore;
-    
+    const isNewHighScore = finalScore > (stats.snakeHighScore || 0);
+
     setStats(prev => ({
       ...prev,
-      snakeHighScore: isNewHighScore ? score : prev.snakeHighScore,
-      snakeMatches: prev.snakeMatches + 1
+      snakeHighScore: isNewHighScore ? finalScore : (prev.snakeHighScore || 0),
+      snakeMatches: (prev.snakeMatches || 0) + 1
     }));
 
-    await updateDoc(userRef, {
-      snakeMatches: increment(1),
-      ...(isNewHighScore && { snakeHighScore: score })
-    });
+    try {
+      await updateDoc(userRef, {
+        snakeMatches: increment(1),
+        ...(isNewHighScore && { snakeHighScore: finalScore })
+      });
+    } catch (error) {
+      console.error('Failed to update snake stats', error);
+    }
   };
   gameOverRef.current = gameOver;
 
@@ -117,54 +134,73 @@ const SnakeGame = () => {
     if (view !== 'game' || isGameOver) return;
 
     const moveSnake = () => {
-      setSnake(prev => {
-        const head = prev[0];
-        const newHead = { x: head.x + dirRef.current.x, y: head.y + dirRef.current.y };
+      if (dirQueueRef.current.length > 0) {
+        const nextDir = dirQueueRef.current.shift();
+        dirRef.current = nextDir;
+      }
 
-        if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
-          if (gameOverRef.current) gameOverRef.current();
-          return prev;
-        }
+      const currentSnake = snakeRef.current;
+      const head = currentSnake[0];
+      const newHead = { x: head.x + dirRef.current.x, y: head.y + dirRef.current.y };
 
-        if (prev.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
-          if (gameOverRef.current) gameOverRef.current();
-          return prev;
-        }
+      if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
+        gameOverRef.current?.(false);
+        return;
+      }
 
-        const newSnake = [newHead, ...prev];
+      const activeFood = foodRef.current;
+      const willEat = activeFood && newHead.x === activeFood.x && newHead.y === activeFood.y;
+      const collisionBody = willEat ? currentSnake : currentSnake.slice(0, -1);
 
-        if (newHead.x === food.x && newHead.y === food.y) {
-          sound.playScore();
-          setScore(s => s + 10);
-          setFood(generateFood(newSnake));
+      if (collisionBody.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+        gameOverRef.current?.(false);
+        return;
+      }
+
+      const newSnake = willEat ? [newHead, ...currentSnake] : [newHead, ...currentSnake.slice(0, -1)];
+      snakeRef.current = newSnake;
+      setSnake(newSnake);
+
+      if (willEat) {
+        sound.playScore();
+        scoreRef.current += 10;
+        setScore(scoreRef.current);
+        const nextFood = generateFood(newSnake);
+        if (!nextFood) {
+          gameOverRef.current?.(true);
         } else {
-          newSnake.pop(); 
+          foodRef.current = nextFood;
+          setFood(nextFood);
         }
-
-        return newSnake;
-      });
+      }
     };
 
-    const intervalId = setInterval(moveSnake, 100); 
+    const intervalId = setInterval(moveSnake, 100);
     return () => clearInterval(intervalId);
-  }, [view, isGameOver, food, generateFood]);
+  }, [view, isGameOver, generateFood]);
 
   const handleDirChange = useCallback((x, y) => {
     if (view !== 'game' || isGameOver) return;
-    const current = dirRef.current;
-    if (x !== 0 && current.x === -x) return;
-    if (y !== 0 && current.y === -y) return;
+    if (dirQueueRef.current.length >= 2) return;
+    const lastPlanned = dirQueueRef.current.length > 0
+      ? dirQueueRef.current[dirQueueRef.current.length - 1]
+      : dirRef.current;
+    if ((lastPlanned.x === x && lastPlanned.y === y) || (x !== 0 && lastPlanned.x === -x) || (y !== 0 && lastPlanned.y === -y)) {
+      return;
+    }
     sound.playMove();
-    dirRef.current = { x, y };
+    dirQueueRef.current.push({ x, y });
   }, [view, isGameOver]);
 
   // keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      if (view !== 'game' || isGameOver) return;
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(key)) {
         e.preventDefault();
       }
-      switch (e.key) {
+      switch (key) {
         case 'ArrowUp': case 'w': handleDirChange(0, -1); break;
         case 'ArrowDown': case 's': handleDirChange(0, 1); break;
         case 'ArrowLeft': case 'a': handleDirChange(-1, 0); break;
@@ -174,7 +210,7 @@ const SnakeGame = () => {
     };
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDirChange]);
+  }, [handleDirChange, view, isGameOver]);
 
   // ui components
   const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (

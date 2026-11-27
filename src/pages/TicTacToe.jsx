@@ -109,7 +109,12 @@ const TicTacToe = () => {
           losses: data.losses 
         }, { merge: true });
         
-        setStats(data);
+        setStats({
+          wins: data.wins || 0,
+          losses: data.losses || 0,
+          matches: data.matches || 0,
+          winRate: data.winRate || 0,
+        });
       }
     } catch (error) {
       console.error("Login failed", error);
@@ -171,34 +176,47 @@ const TicTacToe = () => {
     }
   }, [isXNext, view, winner, isDraw, board, difficulty]);
 
+  const hasRecordedResultRef = useRef(false);
+
   const updateStats = useCallback(async (isWin, isDrawGame) => {
     if (isWin) sound.playVictory(); else if (isDrawGame) sound.playClick(); else sound.playGameOver();
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
-    
-    const newWins = isWin ? stats.wins + 1 : stats.wins;
-    const newLosses = (!isWin && !isDrawGame) ? (stats.losses || 0) + 1 : (stats.losses || 0);
-    const newMatches = stats.matches + 1;
 
-    const totalDecisiveGames = newWins + newLosses;
-    const newRate = totalDecisiveGames === 0 ? 0 : ((newWins / totalDecisiveGames) * 100).toFixed(1);
+    setStats((prev) => {
+      const newWins = isWin ? (prev.wins || 0) + 1 : (prev.wins || 0);
+      const newLosses = (!isWin && !isDrawGame) ? (prev.losses || 0) + 1 : (prev.losses || 0);
+      const newMatches = (prev.matches || 0) + 1;
+      const totalDecisiveGames = newWins + newLosses;
+      const newRate = totalDecisiveGames === 0 ? 0 : ((newWins / totalDecisiveGames) * 100).toFixed(1);
 
-    setStats({ wins: newWins, losses: newLosses, matches: newMatches, winRate: newRate });
+      updateDoc(userRef, {
+        matches: increment(1),
+        wins: isWin ? increment(1) : increment(0),
+        losses: (!isWin && !isDrawGame) ? increment(1) : increment(0),
+        winRate: newRate
+      }).catch((error) => console.error('Failed to update TicTacToe stats', error));
 
-    await updateDoc(userRef, {
-      matches: increment(1),
-      wins: isWin ? increment(1) : increment(0),
-      losses: (!isWin && !isDrawGame) ? increment(1) : increment(0),
-      winRate: newRate
+      return { wins: newWins, losses: newLosses, matches: newMatches, winRate: newRate };
     });
-  }, [user, stats.wins, stats.losses, stats.matches]);
+  }, [user]);
 
   // --- 5. STATS SAVING ---
   useEffect(() => {
-    if (view === 'game_ai' && user && (winner || isDraw)) {
-      updateStats(winner === 'X', isDraw);
+    if (!winner && !isDraw) {
+      hasRecordedResultRef.current = false;
+      return;
     }
-  }, [winner, isDraw, view, user, updateStats]);
+    if (hasRecordedResultRef.current) return;
+    hasRecordedResultRef.current = true;
+
+    if (view === 'game_ai') {
+      updateStats(winner === 'X', isDraw);
+    } else if (view === 'game_pvp') {
+      if (winner) sound.playVictory();
+      else if (isDraw) sound.playClick();
+    }
+  }, [winner, isDraw, view, updateStats]);
 
 
   const handleUserClick = (index) => {
@@ -346,7 +364,7 @@ const TicTacToe = () => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: index === 0 ? '#ffd700' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: index === 0 ? 'black' : 'white' }}>{index + 1}</div>
-                    <img src={player.photoURL} alt="Player" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+                    <img src={player.photoURL} alt="Player" referrerPolicy="no-referrer" style={{ width: 40, height: 40, borderRadius: '50%' }} />
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{player.displayName || "Unknown"}</div>
                       <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>{player.matches} Played</div>

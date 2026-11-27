@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, Trophy, ChevronUp, ChevronDown, Flag } from 'lucide-react';
 import sound from '../utils/audioFX';
@@ -49,11 +49,19 @@ const F1HigherLower = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const [currentDriver, setCurrentDriver] = useState(getRandomDriver(null));
-  const [nextDriver, setNextDriver] = useState(getRandomDriver(currentDriver));
+  const [currentDriver, setCurrentDriver] = useState(() => getRandomDriver(null));
+  const [nextDriver, setNextDriver] = useState(() => getRandomDriver(currentDriver));
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [revealMode, setRevealMode] = useState(false);
+  const revealTimeoutRef = useRef(null);
+
+  useEffect(() => () => {
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -85,6 +93,10 @@ const F1HigherLower = () => {
   };
 
   const resetGame = () => {
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
     sound.playClick();
     const first = getRandomDriver(null);
     setCurrentDriver(first);
@@ -103,7 +115,11 @@ const F1HigherLower = () => {
     const isNewHighScore = score > stats.f1HighScore;
     
     setStats(prev => ({ ...prev, f1HighScore: isNewHighScore ? score : prev.f1HighScore, f1Matches: prev.f1Matches + 1 }));
-    await updateDoc(userRef, { f1Matches: increment(1), ...(isNewHighScore && { f1HighScore: score }) });
+    try {
+      await updateDoc(userRef, { f1Matches: increment(1), ...(isNewHighScore && { f1HighScore: score }) });
+    } catch (error) {
+      console.error('Failed to update F1 stats', error);
+    }
   };
 
   const handleGuess = (guessType) => {
@@ -118,7 +134,8 @@ const F1HigherLower = () => {
     if (guessType === 'higher' && isHigher) isCorrect = true;
     if (guessType === 'lower' && isLower) isCorrect = true;
 
-    setTimeout(() => {
+    revealTimeoutRef.current = setTimeout(() => {
+      revealTimeoutRef.current = null;
       if (isCorrect) {
         sound.playScore();
         setScore(s => s + 1);
@@ -305,7 +322,7 @@ const F1HigherLower = () => {
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '20px', marginTop: '10px', width: '100%', maxWidth: '750px' }}>
-            <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '20px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+            <button onClick={() => { if (revealTimeoutRef.current) { clearTimeout(revealTimeoutRef.current); revealTimeoutRef.current = null; } setRevealMode(false); setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '20px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
               <ArrowLeft size={24}/> MENU
             </button>
             <button onClick={resetGame} style={{ flex: 1, padding: '20px', background: 'rgba(255, 24, 1, 0.1)', border: '2px solid #ff1801', color: '#ff1801', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>

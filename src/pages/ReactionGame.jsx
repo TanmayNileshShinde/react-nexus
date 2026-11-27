@@ -110,11 +110,15 @@ export default function ReactionGame() {
     if (!user) return;
     const xpAwarded = time < 200 ? 100 : time < 300 ? 50 : 10;
     const userRef = doc(db, 'users', user.uid);
-    if (!bestTime || time < bestTime) {
-      setBestTime(time);
-      await updateDoc(userRef, { best_reaction: time, total_xp: increment(xpAwarded) });
-    } else {
-      await updateDoc(userRef, { total_xp: increment(xpAwarded) });
+    try {
+      if (!bestTime || time < bestTime) {
+        setBestTime(time);
+        await updateDoc(userRef, { best_reaction: time, total_xp: increment(xpAwarded) });
+      } else {
+        await updateDoc(userRef, { total_xp: increment(xpAwarded) });
+      }
+    } catch (error) {
+      console.error('Failed to update reaction score', error);
     }
   };
 
@@ -130,7 +134,6 @@ export default function ReactionGame() {
       const reaction = Math.round(performance.now() - startTime);
       setResultTime(reaction);
       emitFeedback('success');
-      sound.playVictory();
       setGameState('result');
       processScore(reaction);
     }
@@ -139,10 +142,16 @@ export default function ReactionGame() {
   const fetchLeaderboard = async () => {
     emitFeedback('tap');
     if (view === 'game') {
+      clearAllTimers();
+      setGameState('idle');
       setView('leaderboard');
-      const q = query(collection(db, 'users'), orderBy('best_reaction', 'asc'), limit(10));
-      const snap = await getDocs(q);
-      setLeaderboard(snap.docs.map((d) => d.data()).filter((u) => u.best_reaction !== null));
+      try {
+        const q = query(collection(db, 'users'), orderBy('best_reaction', 'asc'), limit(10));
+        const snap = await getDocs(q);
+        setLeaderboard(snap.docs.map((d) => d.data()).filter((u) => u.best_reaction !== null));
+      } catch (error) {
+        console.error('Error fetching reaction leaderboard', error);
+      }
     } else {
       setView('game');
     }
@@ -178,7 +187,7 @@ export default function ReactionGame() {
         {!user ? (
           <button
             type="button"
-            onPointerDown={handleLogin}
+            onClick={handleLogin}
             style={{
               background: '#f5f7fa',
               color: '#0b0d12',
@@ -338,13 +347,13 @@ export default function ReactionGame() {
             <Home size={16} strokeWidth={1.75} />
           </button>
         </Link>
-        <button type="button" className={styles.button} onPointerDown={fetchLeaderboard} style={{ flex: 1 }}>
+        <button type="button" className={styles.button} onClick={fetchLeaderboard} style={{ flex: 1 }}>
           {view === 'game' ? <Trophy size={16} strokeWidth={1.75} /> : <ArrowLeft size={16} strokeWidth={1.75} />}
         </button>
         <button
           type="button"
           className={styles.button}
-          onPointerDown={startSequence}
+          onClick={startSequence}
           style={{
             flex: 2,
             background: '#f5f7fa',
