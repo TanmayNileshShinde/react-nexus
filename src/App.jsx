@@ -38,6 +38,10 @@ const ROUTE_TITLES = {
 
 function TopChromeBar() {
   const location = useLocation();
+  const isPaddockRoute =
+    location.pathname.startsWith('/paddockdle') || location.pathname === '/f1-wordle';
+  if (isPaddockRoute) return null;
+
   const isHome = location.pathname === '/';
   const routeTitle = ROUTE_TITLES[location.pathname] || 'React Nexus';
 

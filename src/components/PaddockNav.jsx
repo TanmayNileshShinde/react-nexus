@@ -1,75 +1,74 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Flag, Grid, GitBranch, Flame } from 'lucide-react';
+import { Trophy, Home, Flag, Grid, GitBranch } from 'lucide-react';
+import AudioController from './AudioController';
 import '../styles/paddockdle.css';
 
-const PaddockNav = ({ activeTab }) => {
+const PaddockNav = ({ activeTab, onOpenStats }) => {
   const location = useLocation();
 
   const tabs = [
-    {
-      id: 'classic',
-      label: 'Classic Wordle',
-      icon: Flag,
-      path: '/paddockdle',
-      badge: '6 Guesses',
-    },
-    {
-      id: 'grid',
-      label: '3×3 Grid',
-      icon: Grid,
-      path: '/paddockdle-grid',
-      badge: 'Immaculate',
-    },
-    {
-      id: 'career',
-      label: 'Career Guesser',
-      icon: GitBranch,
-      path: '/paddockdle-career',
-      badge: 'Timeline',
-    },
+    { id: 'classic', label: 'Wordle', icon: Flag, path: '/paddockdle' },
+    { id: 'grid', label: 'Grid', icon: Grid, path: '/paddockdle-grid' },
+    { id: 'career', label: 'Career', icon: GitBranch, path: '/paddockdle-career' },
   ];
 
   return (
-    <div className="paddock-nav-wrapper">
-      {/* Top Header Bar */}
-      <div className="paddock-nav-top">
-        <Link to="/" className="paddock-nav-back">
-          <ArrowLeft size={14} />
-          <span>Nexus Arcade</span>
-        </Link>
+    <>
+      <div className="paddock-page-backdrop" aria-hidden="true" />
+      <header className="paddock-topbar">
+        <div className="paddock-topbar-inner">
+          <div className="paddock-topbar-left">
+            {onOpenStats && (
+              <button
+                type="button"
+                onClick={onOpenStats}
+                className="paddock-topbar-icon-btn"
+                title="View statistics"
+                aria-label="View statistics"
+              >
+                <Trophy size={17} strokeWidth={1.8} />
+              </button>
+            )}
 
-        <div className="paddock-nav-badge">
-          <Flame size={14} />
-          <span>PaddockDle F1 Hub</span>
-        </div>
+            <nav className="paddock-mode-links" aria-label="PaddockDle modes">
+              {tabs.map((tab) => {
+                const isActive =
+                  activeTab === tab.id || location.pathname === tab.path;
+                const Icon = tab.icon;
+                return (
+                  <Link
+                    key={tab.id}
+                    to={tab.path}
+                    className={`paddock-mode-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={14} strokeWidth={1.9} />
+                    <span>{tab.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
-        <div className="paddock-nav-subtitle">
-          FIA Telemetry Engine
-        </div>
-      </div>
+          <Link to="/paddockdle" className="paddock-wordmark">
+            <span>PADDOCK</span>
+            <span className="paddock-wordmark-red">DLE</span>
+          </Link>
 
-      {/* Tabs navigation */}
-      <div className="paddock-nav-tabs">
-        {tabs.map((tab) => {
-          const isActive =
-            activeTab === tab.id || location.pathname === tab.path;
-          const Icon = tab.icon;
-
-          return (
+          <div className="paddock-topbar-right">
+            <AudioController />
             <Link
-              key={tab.id}
-              to={tab.path}
-              className={`paddock-tab-btn ${isActive ? 'active' : ''}`}
+              to="/"
+              className="paddock-topbar-icon-btn"
+              title="Back to React Nexus"
+              aria-label="Back to React Nexus"
             >
-              <Icon size={16} />
-              <span>{tab.label}</span>
-              <span className="paddock-tab-pill">{tab.badge}</span>
+              <Home size={17} strokeWidth={1.8} />
             </Link>
-          );
-        })}
-      </div>
-    </div>
+          </div>
+        </div>
+      </header>
+    </>
   );
 };
 

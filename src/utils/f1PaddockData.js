@@ -919,11 +919,9 @@ export function generateShareGrid(guesses, secret, isWon, mode = 'Daily') {
     return [
       getEmoji(comp.nationality),
       getEmoji(comp.team),
-      getEmoji(comp.engine),
-      getEmoji(comp.championships),
-      getEmoji(comp.podiums),
-      getEmoji(comp.debutYear),
       getEmoji(comp.age),
+      getEmoji(comp.debutYear),
+      getEmoji(comp.raceWins),
     ].join('');
   });
 
@@ -994,7 +992,7 @@ export const GRID_CATEGORIES = {
   },
   champion: {
     id: 'champion',
-    label: 'World Champion 🏆',
+    label: 'World Champion',
     badge: '1+ World Titles',
     type: 'stat',
     color: '#ffd700',
@@ -1002,7 +1000,7 @@ export const GRID_CATEGORIES = {
   },
   podiums_10: {
     id: 'podiums_10',
-    label: '10+ Podiums 🍾',
+    label: '10+ Podiums',
     badge: '10+ Career Podiums',
     type: 'stat',
     color: '#a855f7',
@@ -1010,7 +1008,7 @@ export const GRID_CATEGORIES = {
   },
   podiums_50: {
     id: 'podiums_50',
-    label: '50+ Podiums ⭐',
+    label: '50+ Podiums',
     badge: '50+ Career Podiums',
     type: 'stat',
     color: '#ec4899',
@@ -1018,7 +1016,7 @@ export const GRID_CATEGORIES = {
   },
   race_winner: {
     id: 'race_winner',
-    label: 'Race Winner 🏁',
+    label: 'Race Winner',
     badge: '1+ GP Victories',
     type: 'stat',
     color: '#10b981',
@@ -1026,7 +1024,7 @@ export const GRID_CATEGORIES = {
   },
   british: {
     id: 'british',
-    label: 'British Driver 🇬🇧',
+    label: 'British Driver',
     badge: 'United Kingdom',
     type: 'nationality',
     color: '#3b82f6',
@@ -1034,7 +1032,7 @@ export const GRID_CATEGORIES = {
   },
   german: {
     id: 'german',
-    label: 'German Driver 🇩🇪',
+    label: 'German Driver',
     badge: 'Germany',
     type: 'nationality',
     color: '#f59e0b',
@@ -1157,7 +1155,7 @@ export function generateCareerClues(driver) {
     {
       step: 3,
       title: 'Nationality & Heritage',
-      value: `${driver.flag} ${driver.nationality}`,
+      value: driver.nationality,
       hint: `Engine heritage: ${driver.engine}`,
       icon: 'Globe',
     },

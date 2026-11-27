@@ -14,6 +14,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import PaddockNav from '../components/PaddockNav';
+import { FlagIcon } from '../components/PaddockEmblems';
 import {
   F1_DRIVERS,
   GRID_CATEGORIES,
@@ -60,6 +61,23 @@ const F1PaddockGrid = () => {
   };
 
   useEffect(() => () => clearFeedbackTimer(), []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (selectedCell) {
+        clearFeedbackTimer();
+        setSelectedCell(null);
+        setFeedback(null);
+      } else if (showHelp) {
+        setShowHelp(false);
+      } else if (showStats) {
+        setShowStats(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedCell, showHelp, showStats]);
 
   const [stats, setStats] = useState(() => {
     try {
@@ -269,21 +287,13 @@ const F1PaddockGrid = () => {
 
   return (
     <div className="paddock-container">
-      <PaddockNav activeTab="grid" />
+      <PaddockNav activeTab="grid" onOpenStats={() => setShowStats(true)} />
 
-      {/* Hero Title */}
-      <div className="paddock-hero">
-        <h1>
-          <span>PADDOCK</span>
-          <span className="brand-red">GRID</span>
-        </h1>
-        <p>3×3 Formula 1 Immaculate Grid Puzzle</p>
-      </div>
-
-      {/* Controls Bar */}
-      <div className="paddock-controls-bar">
-        <div className="paddock-mode-toggle">
+      {/* Mode Switcher & Compact Telemetry Bar */}
+      <div className="paddock-mode-pill-wrap">
+        <div className="paddock-mode-pill">
           <button
+            type="button"
             onClick={() => {
               if (mode !== 'daily') {
                 sound?.playMove?.();
@@ -301,6 +311,7 @@ const F1PaddockGrid = () => {
             <span>Daily Grid</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               if (mode !== 'freeplay') {
                 sound?.playMove?.();
@@ -311,38 +322,36 @@ const F1PaddockGrid = () => {
             className={`paddock-pill-btn ${mode === 'freeplay' ? 'active' : ''}`}
           >
             <Sparkles size={13} />
-            <span>Unlimited Practice</span>
+            <span>Unlimited</span>
           </button>
         </div>
 
-        {/* Guesses status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.82rem', fontFamily: 'monospace' }}>
-          <div>
-            Solved: <strong style={{ color: '#34d399' }}>{solvedCount}/9</strong>
-          </div>
-          <div>
-            Guesses: <strong style={{ color: guessesLeft <= 2 ? '#ff4757' : '#ffd700' }}>{guessesLeft} left</strong>
-          </div>
-        </div>
-
-        <div className="paddock-actions">
-          {mode === 'freeplay' && (
-            <button onClick={handleResetGame} className="paddock-icon-btn" title="New Grid">
-              <RotateCcw size={14} />
+        <div className="paddock-substatus-strip">
+          <span>
+            Solved <strong style={{ color: '#4ade80' }}>{solvedCount}/9</strong>
+          </span>
+          <span>
+            Left <strong style={{ color: guessesLeft <= 2 ? '#f87171' : '#f4f4f5' }}>{guessesLeft}</strong>
+          </span>
+          <div className="paddock-toolbar-icons">
+            {mode === 'freeplay' && (
+              <button type="button" onClick={handleResetGame} className="paddock-icon-btn" title="New Grid" style={{ width: '32px', height: '32px' }}>
+                <RotateCcw size={14} />
+              </button>
+            )}
+            <button type="button" onClick={() => setShowHelp(true)} className="paddock-icon-btn" title="How to play" style={{ width: '32px', height: '32px' }}>
+              <HelpCircle size={15} />
             </button>
-          )}
-          <button onClick={() => setShowHelp(true)} className="paddock-icon-btn" title="How to play">
-            <HelpCircle size={14} />
-          </button>
-          <button onClick={() => setShowStats(true)} className="paddock-icon-btn" title="View Stats">
-            <BarChart2 size={14} />
-          </button>
-          {(isGameOver || solvedCount > 0) && (
-            <button onClick={handleShare} className="paddock-share-btn">
-              <Share2 size={13} />
-              <span>{copied ? 'Copied!' : 'Share'}</span>
+            <button type="button" onClick={() => setShowStats(true)} className="paddock-icon-btn" title="View Stats" style={{ width: '32px', height: '32px' }}>
+              <BarChart2 size={15} />
             </button>
-          )}
+            {(isGameOver || solvedCount > 0) && (
+              <button type="button" onClick={handleShare} className="paddock-share-btn" style={{ padding: '6px 12px' }}>
+                <Share2 size={13} />
+                <span>{copied ? 'Copied' : 'Share'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -364,7 +373,11 @@ const F1PaddockGrid = () => {
                 className="paddock-grid-header"
                 style={{ borderTop: `3px solid ${cat.color}` }}
               >
-                <span className="header-tag">COL {colIdx + 1}</span>
+                {cat.type === 'nationality' ? (
+                  <FlagIcon country={cat.badge} size={20} />
+                ) : (
+                  <span className="header-tag">COL {colIdx + 1}</span>
+                )}
                 <span className="header-label">{cat.label}</span>
               </div>
             );
@@ -380,7 +393,11 @@ const F1PaddockGrid = () => {
                   className="paddock-grid-header"
                   style={{ borderLeft: `3px solid ${rowCat.color}` }}
                 >
-                  <span className="header-tag">ROW {rowIdx + 1}</span>
+                  {rowCat.type === 'nationality' ? (
+                    <FlagIcon country={rowCat.badge} size={20} />
+                  ) : (
+                    <span className="header-tag">ROW {rowIdx + 1}</span>
+                  )}
                   <span className="header-label">{rowCat.label}</span>
                 </div>
 
@@ -398,12 +415,12 @@ const F1PaddockGrid = () => {
                     >
                       {driver ? (
                         <>
-                          <span style={{ fontSize: '1.4rem' }}>{driver.flag}</span>
-                          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#6ee7b7' }}>
+                          <FlagIcon country={driver.nationality} size={24} />
+                          <span style={{ fontWeight: 700, fontSize: '0.78rem', color: '#4ade80' }}>
                             {driver.name}
                           </span>
-                          <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', opacity: 0.8 }}>
-                            #{driver.number} • {driver.code}
+                          <span style={{ fontSize: '0.64rem', fontFamily: 'monospace', color: 'rgba(244,244,245,0.72)' }}>
+                            #{driver.number} · {driver.code}
                           </span>
                         </>
                       ) : (
@@ -528,12 +545,12 @@ const F1PaddockGrid = () => {
                       opacity: isSubmitting ? 0.6 : 1,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{driver.flag}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <FlagIcon country={driver.nationality} size={22} />
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{driver.name}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
-                          {driver.currentTeam} • #{driver.number}
+                        <div style={{ fontWeight: 600, fontSize: '0.86rem' }}>{driver.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#8f8f99', fontFamily: 'monospace' }}>
+                          {driver.currentTeam} · #{driver.number}
                         </div>
                       </div>
                     </div>

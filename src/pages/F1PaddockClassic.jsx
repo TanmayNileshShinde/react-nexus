@@ -8,12 +8,11 @@ import {
   BarChart2,
   ChevronUp,
   ChevronDown,
-  Flag,
   Radio,
   X,
   Award,
-  Calendar,
-  Sparkles,
+  Clock,
+  Infinity as InfinityIcon,
 } from 'lucide-react';
 import {
   F1_DRIVERS,
@@ -24,14 +23,15 @@ import {
 } from '../utils/f1PaddockData';
 import { useSound } from '../context/SoundContext';
 import PaddockNav from '../components/PaddockNav';
+import { FlagIcon, TeamBadge } from '../components/PaddockEmblems';
 import '../styles/paddockdle.css';
 
 const MAX_GUESSES = 6;
+const COLUMN_LABELS = ['DRIVER', 'NATIONALITY', 'TEAM', 'AGE', 'DEBUT', 'WINS'];
 
 const F1PaddockClassic = () => {
   const { sound } = useSound();
 
-  // Game mode: 'daily' or 'freeplay'
   const [mode, setMode] = useState('daily');
   const [secretDriver, setSecretDriver] = useState(() => getDailyDriver());
   const [guesses, setGuesses] = useState([]);
@@ -44,7 +44,6 @@ const F1PaddockClassic = () => {
   const [showHint, setShowHint] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Local storage stats
   const [stats, setStats] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_f1_classic_stats');
@@ -71,7 +70,6 @@ const F1PaddockClassic = () => {
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Load daily game progress if available
   useEffect(() => {
     if (mode === 'daily') {
       const todayKey = `nexus_f1_classic_daily_${getLocalDateKey()}`;
@@ -83,13 +81,12 @@ const F1PaddockClassic = () => {
           setIsWon(parsed.isWon || false);
           setIsGameOver(parsed.isGameOver || false);
         } catch {
-          // ignore
+          // ignore corrupted storage
         }
       }
     }
   }, [mode]);
 
-  // Click outside listener for dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -100,7 +97,6 @@ const F1PaddockClassic = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter available drivers for autocomplete
   const availableDrivers = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return [];
@@ -117,6 +113,46 @@ const F1PaddockClassic = () => {
       );
     }).slice(0, 6);
   }, [searchQuery, guesses]);
+
+  const saveDailyState = (currentGuesses, won, over) => {
+    if (mode === 'daily') {
+      const todayKey = `nexus_f1_classic_daily_${getLocalDateKey()}`;
+      localStorage.setItem(
+        todayKey,
+        JSON.stringify({
+          guesses: currentGuesses,
+          isWon: won,
+          isGameOver: over,
+        })
+      );
+    }
+  };
+
+  const updateEndGameStats = (won, guessCount) => {
+    setStats((prev) => {
+      const newStreak = won ? prev.streak + 1 : 0;
+      const newMaxStreak = Math.max(prev.maxStreak, newStreak);
+      const newDistribution = [...prev.distribution];
+      if (won && guessCount >= 1 && guessCount <= MAX_GUESSES) {
+        newDistribution[guessCount - 1] += 1;
+      }
+
+      const newStats = {
+        played: prev.played + 1,
+        won: prev.won + (won ? 1 : 0),
+        streak: newStreak,
+        maxStreak: newMaxStreak,
+        distribution: newDistribution,
+      };
+
+      try {
+        localStorage.setItem('nexus_f1_classic_stats', JSON.stringify(newStats));
+      } catch {
+        // ignore storage failures
+      }
+      return newStats;
+    });
+  };
 
   const handleMakeGuess = (driver) => {
     if (isGameOver || guesses.length >= MAX_GUESSES) return;
@@ -146,49 +182,6 @@ const F1PaddockClassic = () => {
     }
   };
 
-  const saveDailyState = (currentGuesses, won, over) => {
-    if (mode === 'daily') {
-      const todayKey = `nexus_f1_classic_daily_${getLocalDateKey()}`;
-      localStorage.setItem(
-        todayKey,
-        JSON.stringify({
-          guesses: currentGuesses,
-          isWon: won,
-          isGameOver: over,
-        })
-      );
-    }
-  };
-
-  const updateEndGameStats = (won, guessCount) => {
-    setStats((prev) => {
-      const newStreak = won ? prev.streak + 1 : 0;
-      const newMaxStreak = Math.max(prev.maxStreak, newStreak);
-      const newDistribution = [...prev.distribution];
-      if (won && guessCount >= 1 && guessCount <= 6) {
-        newDistribution[guessCount - 1] += 1;
-      }
-
-      const newStats = {
-        played: prev.played + 1,
-        won: prev.won + (won ? 1 : 0),
-        streak: newStreak,
-        maxStreak: newMaxStreak,
-        distribution: newDistribution,
-      };
-
-      try {
-        localStorage.setItem(
-          'nexus_f1_classic_stats',
-          JSON.stringify(newStats)
-        );
-      } catch {
-        // ignore
-      }
-      return newStats;
-    });
-  };
-
   const handleRestartFreeplay = () => {
     sound?.playMove?.();
     const randomIndex = Math.floor(Math.random() * F1_DRIVERS.length);
@@ -206,7 +199,7 @@ const F1PaddockClassic = () => {
       guesses,
       secretDriver,
       isWon,
-      mode === 'daily' ? 'Daily' : 'Practice'
+      mode === 'daily' ? 'Daily' : 'Infinite'
     );
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).catch(() => {});
@@ -215,47 +208,41 @@ const F1PaddockClassic = () => {
     }
   };
 
-  // Render comparison badge
-  const renderBadge = (field, label) => {
-    const isExact = field.status === 'exact';
-    const isPartial = field.status === 'partial';
-    const isHigher = field.status === 'higher';
-    const isLower = field.status === 'lower';
-
-    let statusClass = 'miss';
-    if (isExact) statusClass = 'exact';
-    else if (isPartial) statusClass = 'partial';
+  const renderMetricTile = (field, label) => {
+    const statusClass =
+      field.status === 'exact'
+        ? 'exact'
+        : field.status === 'higher'
+        ? 'higher'
+        : 'lower';
 
     return (
-      <div className={`paddock-badge ${statusClass}`}>
-        <span className="badge-label">{label}</span>
-        <span className="badge-val">
-          {field.value}
-          {isHigher && <ChevronUp size={14} color="#00f3ff" />}
-          {isLower && <ChevronDown size={14} color="#ff4757" />}
-        </span>
+      <div
+        className={`paddock-tile ${statusClass}`}
+        title={
+          field.status === 'exact'
+            ? `${label}: Exact match`
+            : field.status === 'higher'
+            ? `${label}: Target is higher than ${field.value}`
+            : `${label}: Target is lower than ${field.value}`
+        }
+      >
+        <span className="paddock-tile-num">{field.value}</span>
+        {field.status === 'higher' && <ChevronUp size={14} strokeWidth={2.5} />}
+        {field.status === 'lower' && <ChevronDown size={14} strokeWidth={2.5} />}
       </div>
     );
   };
 
   return (
     <div className="paddock-container">
-      {/* PaddockDle Shared Nav */}
-      <PaddockNav activeTab="classic" />
+      <PaddockNav activeTab="classic" onOpenStats={() => setShowStats(true)} />
 
-      {/* Hero Title */}
-      <div className="paddock-hero">
-        <h1>
-          <span>PADDOCK</span>
-          <span className="brand-red">DLE</span>
-        </h1>
-        <p>Formula 1 Mystery Driver Guesser</p>
-      </div>
-
-      {/* Controls Bar */}
-      <div className="paddock-controls-bar">
-        <div className="paddock-mode-toggle">
+      {/* Centered Compact Mode Selector */}
+      <div className="paddock-mode-pill-wrap">
+        <div className="paddock-mode-pill">
           <button
+            type="button"
             onClick={() => {
               sound?.playMove?.();
               setMode('daily');
@@ -267,10 +254,11 @@ const F1PaddockClassic = () => {
             }}
             className={`paddock-pill-btn ${mode === 'daily' ? 'active' : ''}`}
           >
-            <Calendar size={13} />
-            <span>Daily Grand Prix</span>
+            <Clock size={13} strokeWidth={2.2} />
+            <span>Daily</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               sound?.playMove?.();
               setMode('freeplay');
@@ -278,111 +266,184 @@ const F1PaddockClassic = () => {
             }}
             className={`paddock-pill-btn ${mode === 'freeplay' ? 'active' : ''}`}
           >
-            <Sparkles size={13} />
-            <span>Infinite Paddock</span>
+            <InfinityIcon size={13} strokeWidth={2.2} />
+            <span>Infinite</span>
           </button>
-        </div>
-
-        <div className="paddock-actions">
-          <button
-            onClick={() => {
-              sound?.playMove?.();
-              setShowHelp(true);
-            }}
-            className="paddock-icon-btn"
-            title="How to play"
-          >
-            <HelpCircle size={16} />
-          </button>
-          <button
-            onClick={() => {
-              sound?.playMove?.();
-              setShowStats(true);
-            }}
-            className="paddock-icon-btn"
-            title="View Statistics"
-          >
-            <BarChart2 size={16} />
-          </button>
-          {isGameOver && (
-            <button onClick={handleShare} className="paddock-share-btn">
-              <Share2 size={14} />
-              <span>{copied ? 'Copied!' : 'Share'}</span>
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Search Input Area */}
-      {!isGameOver && (
+      {/* Search Row */}
+      <div className="paddock-search-row">
         <div className="paddock-search-box" ref={dropdownRef}>
           <Search size={16} className="paddock-search-icon" />
           <input
             ref={inputRef}
             type="text"
             value={searchQuery}
+            disabled={isGameOver}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setIsDropdownOpen(true);
             }}
             onFocus={() => setIsDropdownOpen(true)}
-            placeholder={`Guess ${guesses.length + 1} of ${MAX_GUESSES}: Type driver or team...`}
+            placeholder={
+              isGameOver
+                ? 'Game complete'
+                : `Guess driver (${guesses.length}/${MAX_GUESSES})...`
+            }
             className="paddock-search-input"
           />
 
-          {isDropdownOpen && availableDrivers.length > 0 && (
+          {!isGameOver && isDropdownOpen && availableDrivers.length > 0 && (
             <div className="paddock-dropdown">
               {availableDrivers.map((driver) => (
                 <button
+                  type="button"
                   key={driver.id}
                   onClick={() => handleMakeGuess(driver)}
                   className="paddock-dropdown-item"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.25rem' }}>{driver.flag}</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>
-                        {driver.name}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
-                        {driver.currentTeam} • Code: {driver.code} (#{driver.number})
-                      </div>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <FlagIcon country={driver.nationality} size={22} />
+                    <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>
+                      {driver.name}
+                    </span>
                   </div>
+                  <span style={{ fontSize: '0.75rem', color: '#71717a' }}>
+                    {driver.currentTeam}
+                  </span>
                 </button>
               ))}
             </div>
           )}
         </div>
-      )}
+
+        <div className="paddock-toolbar-icons">
+          <button
+            type="button"
+            onClick={() => {
+              sound?.playMove?.();
+              setShowHelp(true);
+            }}
+            className="paddock-icon-btn"
+            title="How to play"
+            aria-label="How to play"
+          >
+            <HelpCircle size={17} strokeWidth={1.9} />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              sound?.playMove?.();
+              setShowStats(true);
+            }}
+            className="paddock-icon-btn"
+            title="View statistics"
+            aria-label="View statistics"
+          >
+            <BarChart2 size={17} strokeWidth={1.9} />
+          </button>
+        </div>
+      </div>
+
+      {/* 6-Column Wordle Board */}
+      <div className="paddock-board">
+        <div className="paddock-board-headers">
+          {COLUMN_LABELS.map((col) => (
+            <div key={col} className="paddock-col-head">
+              {col}
+            </div>
+          ))}
+        </div>
+
+        <div className="paddock-board-rows">
+          {Array.from({ length: MAX_GUESSES }).map((_, rowIdx) => {
+            const guess = guesses[rowIdx];
+
+            if (!guess) {
+              return (
+                <div key={`empty-${rowIdx}`} className="paddock-board-row">
+                  {COLUMN_LABELS.map((col) => (
+                    <div key={`${rowIdx}-${col}`} className="paddock-tile empty" />
+                  ))}
+                </div>
+              );
+            }
+
+            const comp = compareDrivers(guess, secretDriver);
+            const teamClass =
+              comp.team.status === 'exact'
+                ? 'exact'
+                : comp.team.status === 'partial'
+                ? 'partial'
+                : 'miss';
+
+            return (
+              <div key={guess.id} className="paddock-board-row">
+                <div className="paddock-tile driver" title={guess.name}>
+                  {guess.code}
+                </div>
+                <div
+                  className={`paddock-tile ${
+                    comp.nationality.status === 'exact' ? 'exact' : 'miss'
+                  }`}
+                  title={guess.nationality}
+                >
+                  <FlagIcon country={guess.nationality} size={32} />
+                </div>
+                <div className={`paddock-tile ${teamClass}`} title={guess.currentTeam}>
+                  <TeamBadge team={guess.currentTeam} />
+                </div>
+                {renderMetricTile(comp.age, 'Age')}
+                {renderMetricTile(comp.debutYear, 'Debut')}
+                {renderMetricTile(comp.raceWins, 'Wins')}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Compact Color Key */}
+      <div className="paddock-legend">
+        <span className="paddock-legend-item">
+          <span className="paddock-legend-dot" style={{ background: '#22c55e' }} />
+          Exact
+        </span>
+        <span className="paddock-legend-item">
+          <span className="paddock-legend-dot" style={{ background: '#fb923c' }} />
+          Higher / Former Team
+        </span>
+        <span className="paddock-legend-item">
+          <span className="paddock-legend-dot" style={{ background: '#c084fc' }} />
+          Lower
+        </span>
+        <span className="paddock-legend-item">
+          <span className="paddock-legend-dot" style={{ background: '#ef4444' }} />
+          Miss
+        </span>
+      </div>
 
       {/* Pit Wall Radio Hint */}
       {!isGameOver && guesses.length >= 3 && (
         <div className="paddock-hint-card">
-          <Radio size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
+          <Radio size={15} style={{ color: '#fb923c', flexShrink: 0 }} />
           {!showHint ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <span style={{ fontSize: '0.8rem' }}>Pit Wall Radio Telemetry ready!</span>
+              <span style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>
+                Radio clue unlocked
+              </span>
               <button
+                type="button"
                 onClick={() => setShowHint(true)}
-                style={{
-                  background: '#f59e0b',
-                  color: '#000',
-                  border: 'none',
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                }}
+                className="paddock-pill-btn active"
+                style={{ padding: '5px 12px', fontSize: '0.7rem' }}
               >
-                Listen to Radio Clue
+                Reveal Clue
               </button>
             </div>
           ) : (
-            <div style={{ fontSize: '0.8rem' }}>
-              <strong>Radio Clue:</strong> This driver currently represents{' '}
-              <strong>{secretDriver.currentTeam}</strong> ({secretDriver.engine} engine).
+            <div style={{ fontSize: '0.82rem' }}>
+              Team: <strong>{secretDriver.currentTeam}</strong> ({secretDriver.engine} power unit)
             </div>
           )}
         </div>
@@ -391,26 +452,44 @@ const F1PaddockClassic = () => {
       {/* Game Over Banner */}
       {isGameOver && (
         <div className="paddock-banner">
-          <Trophy size={36} color="#ffd700" style={{ margin: '0 auto 8px', display: 'block' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 6px', color: isWon ? '#34d399' : '#ff4757' }}>
-            {isWon ? 'P1 FINISH! CHECKERED FLAG!' : 'DNF - OUT OF GUESSES'}
+          <Trophy size={28} color="#fbbf24" style={{ margin: '0 auto 8px', display: 'block' }} />
+          <h2
+            style={{
+              fontSize: '1.25rem',
+              fontWeight: 800,
+              margin: '0 0 8px',
+              color: isWon ? '#4ade80' : '#f87171',
+            }}
+          >
+            {isWon ? `Solved in ${guesses.length}/${MAX_GUESSES}` : 'Out of guesses'}
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', margin: '0 0 16px' }}>
-            {isWon
-              ? `You identified ${secretDriver.flag} ${secretDriver.name} in ${guesses.length} attempts!`
-              : `The secret driver was ${secretDriver.flag} ${secretDriver.name} (${secretDriver.currentTeam}).`}
-          </p>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '16px',
+              fontSize: '0.9rem',
+              color: '#e4e4e7',
+            }}
+          >
+            <FlagIcon country={secretDriver.nationality} size={24} />
+            <span>
+              <strong>{secretDriver.name}</strong> ({secretDriver.currentTeam})
+            </span>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-            <button onClick={handleShare} className="paddock-share-btn">
+            <button type="button" onClick={handleShare} className="paddock-share-btn">
               <Share2 size={14} />
-              <span>{copied ? 'Copied to Clipboard!' : 'Share Telemetry'}</span>
+              <span>{copied ? 'Copied' : 'Share'}</span>
             </button>
             {mode === 'freeplay' && (
               <button
+                type="button"
                 onClick={handleRestartFreeplay}
                 className="paddock-pill-btn"
-                style={{ background: 'rgba(255,255,255,0.1)' }}
+                style={{ background: '#27272a', color: '#f4f4f5' }}
               >
                 <RotateCcw size={14} />
                 <span>Next Driver</span>
@@ -420,70 +499,50 @@ const F1PaddockClassic = () => {
         </div>
       )}
 
-      {/* Guess Telemetry Board */}
-      <div className="paddock-guess-list">
-        {guesses.length > 0 ? (
-          guesses.map((guess, idx) => {
-            const comp = compareDrivers(guess, secretDriver);
-            return (
-              <div key={idx} className="paddock-guess-row">
-                <div className="paddock-badge" style={{ minWidth: '90px' }}>
-                  <span className="badge-label">Driver</span>
-                  <span className="badge-val">
-                    {guess.flag} {guess.code}
-                  </span>
-                </div>
-                {renderBadge(comp.nationality, 'Country')}
-                {renderBadge(comp.team, 'Team')}
-                {renderBadge(comp.engine, 'Engine')}
-                {renderBadge(comp.championships, 'Titles')}
-                {renderBadge(comp.podiums, 'Podiums')}
-                {renderBadge(comp.debutYear, 'Debut')}
-                {renderBadge(comp.age, 'Age')}
-              </div>
-            );
-          })
-        ) : (
-          <div className="paddock-empty-state">
-            <Flag size={24} style={{ opacity: 0.5 }} />
-            <span style={{ fontSize: '0.82rem', fontFamily: 'monospace' }}>
-              No telemetry yet. Search and select an F1 driver above to begin!
-            </span>
-          </div>
-        )}
-      </div>
-
       {/* Help Modal */}
       {showHelp && (
         <div className="paddock-modal-overlay">
           <div className="paddock-modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <HelpCircle size={18} color="#e10600" />
-                <span>How to Play PaddockDle</span>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <HelpCircle size={18} color="#ff2400" />
+                <span>How to play PaddockDle</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setShowHelp(false)}
                 className="paddock-icon-btn"
-                style={{ width: '28px', height: '28px' }}
+                style={{ width: '30px', height: '30px' }}
               >
                 <X size={14} />
               </button>
             </div>
 
-            <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>
-              <p>🎯 Guess the secret Formula 1 driver in <strong>6 guesses</strong>.</p>
-              <p>🟩 <strong>Green:</strong> Exact match on nationality, team, engine, podiums, titles, or debut.</p>
-              <p>🟨 <strong>Yellow:</strong> Partial match (the driver raced for this team in their career).</p>
-              <p>⬆️ / ⬇️ <strong>Arrows:</strong> Stat is higher or lower than your guess.</p>
+            <div style={{ fontSize: '0.84rem', color: '#d4d4d8', lineHeight: 1.65 }}>
+              <p style={{ marginTop: 0 }}>
+                Guess the mystery Formula 1 driver within <strong>6 guesses</strong>.
+              </p>
+              <p>
+                <strong style={{ color: '#4ade80' }}>Green:</strong> Exact match for nationality, team, age, debut year, or Grand Prix wins.
+              </p>
+              <p>
+                <strong style={{ color: '#fb923c' }}>Orange:</strong> Driver previously raced for that team, or numeric target is <strong>higher</strong> (up arrow).
+              </p>
+              <p>
+                <strong style={{ color: '#c084fc' }}>Purple:</strong> Numeric target is <strong>lower</strong> (down arrow).
+              </p>
+              <p style={{ marginBottom: 0 }}>
+                <strong style={{ color: '#f87171' }}>Red:</strong> Does not match.
+              </p>
             </div>
 
             <button
+              type="button"
               onClick={() => setShowHelp(false)}
               className="paddock-pill-btn active"
-              style={{ width: '100%', marginTop: '16px', justifyContent: 'center', padding: '10px' }}
+              style={{ width: '100%', marginTop: '18px', justifyContent: 'center', padding: '10px' }}
             >
-              Back to Track
+              Close
             </button>
           </div>
         </div>
@@ -494,14 +553,15 @@ const F1PaddockClassic = () => {
         <div className="paddock-modal-overlay">
           <div className="paddock-modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award size={18} color="#ffd700" />
-                <span>Career Telemetry Stats</span>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Award size={18} color="#fbbf24" />
+                <span>Statistics</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setShowStats(false)}
                 className="paddock-icon-btn"
-                style={{ width: '28px', height: '28px' }}
+                style={{ width: '30px', height: '30px' }}
               >
                 <X size={14} />
               </button>
@@ -513,31 +573,32 @@ const F1PaddockClassic = () => {
                 <span className="paddock-stat-lbl">Played</span>
               </div>
               <div className="paddock-stat-box">
-                <span className="paddock-stat-num" style={{ color: '#34d399' }}>
+                <span className="paddock-stat-num" style={{ color: '#4ade80' }}>
                   {stats.played > 0 ? Math.round((stats.won / stats.played) * 100) : 0}%
                 </span>
                 <span className="paddock-stat-lbl">Win %</span>
               </div>
               <div className="paddock-stat-box">
-                <span className="paddock-stat-num" style={{ color: '#f59e0b' }}>
+                <span className="paddock-stat-num" style={{ color: '#fb923c' }}>
                   {stats.streak}
                 </span>
                 <span className="paddock-stat-lbl">Streak</span>
               </div>
               <div className="paddock-stat-box">
-                <span className="paddock-stat-num" style={{ color: '#60a5fa' }}>
+                <span className="paddock-stat-num" style={{ color: '#c084fc' }}>
                   {stats.maxStreak}
                 </span>
-                <span className="paddock-stat-lbl">Max Streak</span>
+                <span className="paddock-stat-lbl">Best</span>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={() => setShowStats(false)}
               className="paddock-pill-btn"
-              style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '10px', background: '#27272a', color: '#f4f4f5' }}
             >
-              Close Telemetry
+              Close
             </button>
           </div>
         </div>

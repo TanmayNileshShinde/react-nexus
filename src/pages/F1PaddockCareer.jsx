@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import PaddockNav from '../components/PaddockNav';
+import { FlagIcon } from '../components/PaddockEmblems';
 import {
   F1_DRIVERS,
   getDailyCareerDriver,
@@ -239,21 +240,13 @@ const F1PaddockCareer = () => {
 
   return (
     <div className="paddock-container">
-      <PaddockNav activeTab="career" />
+      <PaddockNav activeTab="career" onOpenStats={() => setShowStats(true)} />
 
-      {/* Hero Title */}
-      <div className="paddock-hero">
-        <h1>
-          <span>PADDOCK</span>
-          <span className="brand-red">CAREER</span>
-        </h1>
-        <p>Formula 1 Career Progression & Timeline Guesser</p>
-      </div>
-
-      {/* Controls Bar */}
-      <div className="paddock-controls-bar">
-        <div className="paddock-mode-toggle">
+      {/* Mode Switcher & Clues Strip */}
+      <div className="paddock-mode-pill-wrap">
+        <div className="paddock-mode-pill">
           <button
+            type="button"
             onClick={() => {
               if (mode !== 'daily') {
                 sound?.playMove?.();
@@ -268,9 +261,10 @@ const F1PaddockCareer = () => {
             className={`paddock-pill-btn ${mode === 'daily' ? 'active' : ''}`}
           >
             <Calendar size={13} />
-            <span>Daily Driver</span>
+            <span>Daily</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               if (mode !== 'freeplay') {
                 sound?.playMove?.();
@@ -281,47 +275,45 @@ const F1PaddockCareer = () => {
             className={`paddock-pill-btn ${mode === 'freeplay' ? 'active' : ''}`}
           >
             <Sparkles size={13} />
-            <span>Practice Mode</span>
+            <span>Practice</span>
           </button>
         </div>
 
-        {/* Clue & Hearts Tracker */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.82rem', fontFamily: 'monospace' }}>
-          <div>
-            Clue: <strong style={{ color: '#ffd700' }}>{currentStep}/{MAX_STEPS}</strong>
-          </div>
+        <div className="paddock-substatus-strip">
+          <span>
+            Clue <strong style={{ color: '#fbbf24' }}>{currentStep}/{MAX_STEPS}</strong>
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {[1, 2, 3, 4, 5].map((s) => (
               <Heart
                 key={s}
-                size={14}
+                size={13}
                 style={{
-                  color: s <= (MAX_STEPS - (guesses.length || 0)) ? '#ef4444' : 'rgba(255,255,255,0.2)',
-                  fill: s <= (MAX_STEPS - (guesses.length || 0)) ? '#ef4444' : 'transparent',
+                  color: s <= (MAX_STEPS - (guesses.length || 0)) ? '#ff2400' : 'rgba(255,255,255,0.18)',
+                  fill: s <= (MAX_STEPS - (guesses.length || 0)) ? '#ff2400' : 'transparent',
                 }}
               />
             ))}
           </div>
-        </div>
-
-        <div className="paddock-actions">
-          {mode === 'freeplay' && (
-            <button onClick={handleResetGame} className="paddock-icon-btn" title="New Driver">
-              <RotateCcw size={14} />
+          <div className="paddock-toolbar-icons">
+            {mode === 'freeplay' && (
+              <button type="button" onClick={handleResetGame} className="paddock-icon-btn" title="New Driver" style={{ width: '32px', height: '32px' }}>
+                <RotateCcw size={14} />
+              </button>
+            )}
+            <button type="button" onClick={() => setShowHelp(true)} className="paddock-icon-btn" title="How to play" style={{ width: '32px', height: '32px' }}>
+              <HelpCircle size={15} />
             </button>
-          )}
-          <button onClick={() => setShowHelp(true)} className="paddock-icon-btn" title="How to play">
-            <HelpCircle size={14} />
-          </button>
-          <button onClick={() => setShowStats(true)} className="paddock-icon-btn" title="View Stats">
-            <BarChart2 size={14} />
-          </button>
-          {isGameOver && (
-            <button onClick={handleShare} className="paddock-share-btn">
-              <Share2 size={13} />
-              <span>{copied ? 'Copied!' : 'Share'}</span>
+            <button type="button" onClick={() => setShowStats(true)} className="paddock-icon-btn" title="View Stats" style={{ width: '32px', height: '32px' }}>
+              <BarChart2 size={15} />
             </button>
-          )}
+            {isGameOver && (
+              <button type="button" onClick={handleShare} className="paddock-share-btn" style={{ padding: '6px 12px' }}>
+                <Share2 size={13} />
+                <span>{copied ? 'Copied' : 'Share'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -345,8 +337,15 @@ const F1PaddockCareer = () => {
                   <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', textTransform: 'uppercase' }}>
                     {clue.title}
                   </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '2px' }}>
-                    {isRevealed ? clue.value : '••••••••••••••••••••••••'}
+                  <div style={{ fontSize: '0.94rem', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isRevealed ? (
+                      <>
+                        {clue.step === 3 && <FlagIcon country={secretDriver.nationality} size={20} />}
+                        <span>{clue.value}</span>
+                      </>
+                    ) : (
+                      '••••••••••••••••••••••••'
+                    )}
                   </div>
                 </div>
               </div>
@@ -393,11 +392,11 @@ const F1PaddockCareer = () => {
                     className="paddock-dropdown-item"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '1.25rem' }}>{driver.flag}</span>
+                      <FlagIcon country={driver.nationality} size={22} />
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{driver.name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
-                          {driver.currentTeam} • #{driver.number}
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{driver.name}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#8f8f99', fontFamily: 'monospace' }}>
+                          {driver.currentTeam} · #{driver.number}
                         </div>
                       </div>
                     </div>
@@ -446,7 +445,7 @@ const F1PaddockCareer = () => {
               marginBottom: '16px',
             }}
           >
-            <span style={{ fontSize: '2.5rem' }}>{secretDriver.flag}</span>
+            <FlagIcon country={secretDriver.nationality} size={34} />
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{secretDriver.name}</div>
               <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>
