@@ -89,6 +89,7 @@ function App() {
             <Route path="/paddockdle-career" element={<F1PaddockCareer />} />
             <Route path="/type" element={<TypingMaster />} />
             <Route path="/2048" element={<Neon2048 />} />
+            <Route path="*" element={<Home />} />
           </Routes>
         </Router>
       </SoundProvider>

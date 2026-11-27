@@ -19,7 +19,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            overflow-y: auto;
         }
 
         .glass-panel {
@@ -117,7 +117,7 @@
                     <div style="font-size: 0.85rem; font-weight: bold;">{{user.displayName}}</div>
                     <div style="font-size: 0.7rem; color: #bc13fe;">High Score: {{user.math_score || 0}}</div>
                 </div>
-                <img ng-src="{{user.photoURL}}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #bc13fe;">
+                <img ng-src="{{user.photoURL}}" referrerpolicy="no-referrer" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #bc13fe;">
             </div>
         </div>
 
@@ -139,7 +139,7 @@
             <div class="leaderboard-item" ng-repeat="p in leaderboard">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="color: #ffcc00; font-weight: bold;">#{{$index + 1}}</span>
-                    <img ng-src="{{p.photoURL}}" style="width: 30px; height: 30px; border-radius: 50%;">
+                    <img ng-src="{{p.photoURL}}" referrerpolicy="no-referrer" style="width: 30px; height: 30px; border-radius: 50%;">
                     <span>{{p.displayName}}</span>
                 </div>
                 <span style="color: #bc13fe; font-weight: bold;">{{p.math_score}} pts</span>
@@ -208,19 +208,27 @@
                 } catch (e) { console.error(e); }
             };
 
+            let timerPromise = null;
+
             $scope.loadUserData = async () => {
                 if(!$scope.user) return;
-                const ref = doc(db, "users", $scope.user.uid);
-                const snap = await getDoc(ref);
-                if(snap.exists()) {
-                    $scope.$apply(() => $scope.user.math_score = snap.data().math_score || 0);
-                } else {
-                    await setDoc(ref, { displayName: $scope.user.displayName, photoURL: $scope.user.photoURL, math_score: 0 }, { merge: true });
-                }
+                try {
+                    const ref = doc(db, "users", $scope.user.uid);
+                    const snap = await getDoc(ref);
+                    if(snap.exists()) {
+                        $scope.$apply(() => $scope.user.math_score = snap.data().math_score || 0);
+                    } else {
+                        await setDoc(ref, { displayName: $scope.user.displayName, photoURL: $scope.user.photoURL, math_score: 0 }, { merge: true });
+                    }
+                } catch (e) { console.error(e); }
             };
 
             // GAME LOOP
             $scope.startGame = () => {
+                if (timerPromise) {
+                    $timeout.cancel(timerPromise);
+                    timerPromise = null;
+                }
                 $scope.score = 0;
                 $scope.timer = 30;
                 $scope.nextQuestion();
@@ -229,12 +237,16 @@
 
             $scope.tick = () => {
                 if($scope.timer > 0) {
-                    $timeout(() => {
+                    timerPromise = $timeout(() => {
                         if($scope.timer > 0) $scope.timer--;
                         $scope.tick();
                     }, 1000);
                 }
             };
+
+            $scope.$on('$destroy', () => {
+                if (timerPromise) $timeout.cancel(timerPromise);
+            });
 
             $scope.nextQuestion = () => {
                 const a = Math.floor(Math.random() * 20) + 1;
@@ -259,7 +271,9 @@
                     $scope.timer += 2;
                     if($scope.user && $scope.score > ($scope.user.math_score || 0)) {
                         $scope.user.math_score = $scope.score;
-                        await updateDoc(doc(db, "users", $scope.user.uid), { math_score: $scope.score });
+                        try {
+                            await updateDoc(doc(db, "users", $scope.user.uid), { math_score: $scope.score });
+                        } catch (e) { console.error(e); }
                     }
                 } 
                 $scope.nextQuestion();
@@ -268,9 +282,11 @@
             $scope.toggleView = async () => {
                 if($scope.view === 'game') {
                     $scope.view = 'leaderboard';
-                    const q = query(collection(db, "users"), orderBy("math_score", "desc"), limit(10));
-                    const snap = await getDocs(q);
-                    $scope.$apply(() => { $scope.leaderboard = snap.docs.map(d => d.data()); });
+                    try {
+                        const q = query(collection(db, "users"), orderBy("math_score", "desc"), limit(10));
+                        const snap = await getDocs(q);
+                        $scope.$apply(() => { $scope.leaderboard = snap.docs.map(d => d.data()); });
+                    } catch (e) { console.error(e); }
                 } else {
                     $scope.view = 'game';
                 }

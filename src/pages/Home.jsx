@@ -182,7 +182,7 @@ export default function Home() {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onPointerDown={() => {
+                onClick={() => {
                   setSegment(seg.id);
                   emitFeedback('tap');
                 }}

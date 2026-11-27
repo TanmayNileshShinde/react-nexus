@@ -517,7 +517,7 @@
   font-size: 0.9rem;
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  shrink: 0;
+  flex-shrink: 0;
 }
 
 .paddock-clue-card.active .paddock-step-badge {

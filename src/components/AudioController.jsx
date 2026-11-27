@@ -29,7 +29,7 @@ export default function AudioController() {
       <button
         type="button"
         className={`arcade-audio-btn ${isMuted ? 'muted' : ''}`}
-        onPointerDown={() => {
+        onClick={() => {
           toggleMute();
           emitFeedback('tap');
         }}

@@ -18,6 +18,7 @@ import {
   F1_DRIVERS,
   getDailyCareerDriver,
   getRandomCareerDriver,
+  getLocalDateKey,
   generateCareerClues,
   generateCareerShareText,
 } from '../utils/f1PaddockData';
@@ -61,7 +62,7 @@ const F1PaddockCareer = () => {
 
   useEffect(() => {
     if (mode === 'daily') {
-      const todayKey = `nexus_f1_career_daily_${new Date().toISOString().slice(0, 10)}`;
+      const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
       const savedDaily = localStorage.getItem(todayKey);
       if (savedDaily) {
         try {
@@ -76,6 +77,17 @@ const F1PaddockCareer = () => {
       }
     }
   }, [mode]);
+
+  const dropdownRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const filteredDrivers = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -109,7 +121,7 @@ const F1PaddockCareer = () => {
       updateEndStats(true, currentStep);
 
       if (mode === 'daily') {
-        const todayKey = `nexus_f1_career_daily_${new Date().toISOString().slice(0, 10)}`;
+        const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
         localStorage.setItem(
           todayKey,
           JSON.stringify({
@@ -122,12 +134,12 @@ const F1PaddockCareer = () => {
       }
     } else {
       sound?.playGameOver?.();
-      if (currentStep >= MAX_STEPS) {
+      if (newGuesses.length >= MAX_STEPS) {
         setIsGameOver(true);
         updateEndStats(false, currentStep);
 
         if (mode === 'daily') {
-          const todayKey = `nexus_f1_career_daily_${new Date().toISOString().slice(0, 10)}`;
+          const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
           localStorage.setItem(
             todayKey,
             JSON.stringify({
@@ -139,11 +151,11 @@ const F1PaddockCareer = () => {
           );
         }
       } else {
-        const nextStep = currentStep + 1;
+        const nextStep = Math.min(MAX_STEPS, currentStep + 1);
         setCurrentStep(nextStep);
 
         if (mode === 'daily') {
-          const todayKey = `nexus_f1_career_daily_${new Date().toISOString().slice(0, 10)}`;
+          const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
           localStorage.setItem(
             todayKey,
             JSON.stringify({
@@ -165,7 +177,7 @@ const F1PaddockCareer = () => {
     setCurrentStep(nextStep);
 
     if (mode === 'daily') {
-      const todayKey = `nexus_f1_career_daily_${new Date().toISOString().slice(0, 10)}`;
+      const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
       localStorage.setItem(
         todayKey,
         JSON.stringify({
@@ -218,7 +230,7 @@ const F1PaddockCareer = () => {
       isWon,
       mode === 'daily' ? 'Daily' : 'Practice'
     );
-    navigator.clipboard.writeText(text);
+    navigator.clipboard?.writeText(text)?.catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -357,7 +369,7 @@ const F1PaddockCareer = () => {
       {/* Guess Input & Controls */}
       {!isGameOver ? (
         <div style={{ width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div className="paddock-search-box" style={{ maxWidth: '100%', margin: 0 }}>
+          <div ref={dropdownRef} className="paddock-search-box" style={{ maxWidth: '100%', margin: 0 }}>
             <Search size={16} className="paddock-search-icon" />
             <input
               ref={searchInputRef}

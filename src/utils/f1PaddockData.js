@@ -803,6 +803,20 @@ export const F1_DRIVERS = [
   },
 ];
 
+export function getLocalDateKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function normalizeTeamName(team) {
+  if (!team) return '';
+  const stripped = team.replace(/^Retired\s*\/\s*/i, '').trim();
+  if (stripped === 'Red Bull') return 'Red Bull Racing';
+  return stripped;
+}
+
 // Helper to get daily secret driver based on calendar day
 export function getDailyDriver(date = new Date()) {
   const dayIndex = Math.floor(
@@ -816,15 +830,19 @@ export function getDailyDriver(date = new Date()) {
 
 // Helper to evaluate guess against secret driver
 export function compareDrivers(guess, secret) {
+  const guessTeam = normalizeTeamName(guess.currentTeam);
+  const secretTeam = normalizeTeamName(secret.currentTeam);
+  const secretTeamsNormalized = secret.teams.map(normalizeTeamName);
+
   const result = {
     driver: guess,
     nameMatch: guess.id === secret.id,
     team: {
       value: guess.currentTeam,
       status:
-        guess.currentTeam === secret.currentTeam
+        guessTeam === secretTeam
           ? 'exact'
-          : secret.teams.includes(guess.currentTeam)
+          : secretTeamsNormalized.includes(guessTeam)
           ? 'partial'
           : 'miss',
     },

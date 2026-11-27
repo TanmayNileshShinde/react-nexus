@@ -6,7 +6,6 @@ import {
   Share2,
   HelpCircle,
   BarChart2,
-  Check,
   ChevronUp,
   ChevronDown,
   Flag,
@@ -14,12 +13,12 @@ import {
   X,
   Award,
   Calendar,
-  Flame,
   Sparkles,
 } from 'lucide-react';
 import {
   F1_DRIVERS,
   getDailyDriver,
+  getLocalDateKey,
   compareDrivers,
   generateShareGrid,
 } from '../utils/f1PaddockData';
@@ -75,7 +74,7 @@ const F1PaddockClassic = () => {
   // Load daily game progress if available
   useEffect(() => {
     if (mode === 'daily') {
-      const todayKey = `nexus_f1_classic_daily_${new Date().toISOString().slice(0, 10)}`;
+      const todayKey = `nexus_f1_classic_daily_${getLocalDateKey()}`;
       const savedDaily = localStorage.getItem(todayKey);
       if (savedDaily) {
         try {
@@ -149,7 +148,7 @@ const F1PaddockClassic = () => {
 
   const saveDailyState = (currentGuesses, won, over) => {
     if (mode === 'daily') {
-      const todayKey = `nexus_f1_classic_daily_${new Date().toISOString().slice(0, 10)}`;
+      const todayKey = `nexus_f1_classic_daily_${getLocalDateKey()}`;
       localStorage.setItem(
         todayKey,
         JSON.stringify({
@@ -210,7 +209,7 @@ const F1PaddockClassic = () => {
       mode === 'daily' ? 'Daily' : 'Practice'
     );
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
+      navigator.clipboard.writeText(text).catch(() => {});
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     }

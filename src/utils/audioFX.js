@@ -6,8 +6,17 @@
 class SoundEngine {
   constructor() {
     this.ctx = null;
-    this.muted = localStorage.getItem('react-nexus-muted') === 'true';
-    this.volume = parseFloat(localStorage.getItem('react-nexus-volume') || '0.35');
+    this.muted = false;
+    this.volume = 0.35;
+    try {
+      this.muted = localStorage.getItem('react-nexus-muted') === 'true';
+      const parsedVol = parseFloat(localStorage.getItem('react-nexus-volume') || '0.35');
+      if (Number.isFinite(parsedVol)) {
+        this.volume = Math.max(0, Math.min(1, parsedVol));
+      }
+    } catch {
+      // ignore storage failures in restricted contexts
+    }
     this.listeners = new Set();
   }
 
@@ -34,7 +43,11 @@ class SoundEngine {
 
   setMuted(isMuted) {
     this.muted = isMuted;
-    localStorage.setItem('react-nexus-muted', String(isMuted));
+    try {
+      localStorage.setItem('react-nexus-muted', String(isMuted));
+    } catch {
+      // ignore
+    }
     this.notify();
   }
 
@@ -44,8 +57,13 @@ class SoundEngine {
   }
 
   setVolume(vol) {
-    this.volume = Math.max(0, Math.min(1, vol));
-    localStorage.setItem('react-nexus-volume', String(this.volume));
+    const safeVol = Number.isFinite(vol) ? vol : 0.35;
+    this.volume = Math.max(0, Math.min(1, safeVol));
+    try {
+      localStorage.setItem('react-nexus-volume', String(this.volume));
+    } catch {
+      // ignore
+    }
     if (this.volume > 0 && this.muted) {
       this.setMuted(false);
     }
