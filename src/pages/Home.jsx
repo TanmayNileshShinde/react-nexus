@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
   Gamepad2,
   Crown,
@@ -10,214 +11,225 @@ import {
   LayoutGrid,
   Flag,
   FileText,
-  Sparkles,
   Trophy,
-  Cpu,
   Flame,
 } from 'lucide-react';
+import { SPRING_DEFAULT, SPRING_SHEET, TAP_DETENT, emitFeedback } from '../utils/fluidMotion';
 
 const GAMES = [
   {
     id: 'tictactoe',
     title: 'Tic-Tac-Toe',
-    category: 'Strategy',
-    desc: 'Unbeatable Minimax AI engine and local 2-player PvP showdown.',
+    group: 'strategy',
+    badge: 'Strategy · AI & PvP',
+    desc: 'Unbeatable Minimax engine paired with instant local 2-player matches.',
     path: '/game',
     icon: Gamepad2,
-    color: '#00f3ff',
-    badge: 'AI & PvP',
+    color: '#38bdf8',
   },
   {
     id: 'chess',
     title: 'Chess Arena',
-    category: 'Grandmaster',
-    desc: 'Full Stockfish engine AI, ranked matches, and cloud leaderboards.',
+    group: 'strategy',
+    badge: 'Strategy · Stockfish',
+    desc: 'Full Stockfish engine opponent, rated clock modes, and cloud leaderboards.',
     path: '/chess',
     icon: Crown,
-    color: '#ffd700',
-    badge: 'Stockfish',
+    color: '#fbbf24',
   },
   {
     id: 'neon2048',
     title: 'Neon 2048',
-    category: 'Puzzle',
-    desc: 'Dynamic sliding tile numbers with cyberpunk kinetic effects.',
+    group: 'arcade',
+    badge: 'Arcade · Gesture',
+    desc: 'Swipe-and-merge sliding number puzzle with physical spring momentum.',
     path: '/2048',
     icon: Grid,
-    color: '#d3fe13',
-    badge: 'Brain Bender',
+    color: '#a3e635',
   },
   {
     id: 'snake',
     title: 'Snake Arena',
-    category: 'Survival',
-    desc: 'Classic high-speed arcade survival with dynamic multipliers.',
+    group: 'arcade',
+    badge: 'Arcade · Survival',
+    desc: 'High-speed grid survival with continuous score multipliers.',
     path: '/snake',
     icon: Activity,
-    color: '#00ff88',
-    badge: 'Retro Classic',
+    color: '#34d399',
   },
   {
     id: 'typing',
     title: 'Terminal Typer',
-    category: 'Rhythm',
-    desc: 'Real-time code typing speed test with WPM and accuracy tracking.',
+    group: 'arcade',
+    badge: 'Arcade · Speed',
+    desc: 'Real-time code typing benchmark with live WPM and accuracy readouts.',
     path: '/type',
     icon: Keyboard,
-    color: '#00b8ff',
-    badge: 'WPM Test',
+    color: '#60a5fa',
   },
   {
     id: 'reaction',
     title: 'Reaction Test',
-    category: 'Reflex',
-    desc: 'Benchmark your nervous system latency in sub-millisecond precision.',
+    group: 'arcade',
+    badge: 'Reflex · Zero-Latency',
+    desc: 'F1 lights-out reflex timer measured on pointer-down without click delay.',
     path: '/reaction',
     icon: Zap,
     color: '#f59e0b',
-    badge: 'Milliseconds',
   },
   {
     id: 'memory',
     title: 'F1 Memory',
-    category: 'Memory',
-    desc: 'Match Formula 1 driver pairs and constructors against the clock.',
+    group: 'f1',
+    badge: 'Formula 1 · Pairs',
+    desc: 'Physical 3D flip deck matching Formula 1 drivers against a move budget.',
     path: '/memory',
     icon: LayoutGrid,
-    color: '#ff4444',
-    badge: 'Grid Match',
+    color: '#f87171',
   },
   {
     id: 'f1trivia',
     title: 'F1 Trivia',
-    category: 'Trivia',
-    desc: 'Higher or lower career points, pole positions, and championship stats.',
+    group: 'f1',
+    badge: 'Formula 1 · Stats',
+    desc: 'Higher-or-lower career points, pole positions, and championship records.',
     path: '/f1',
     icon: Flag,
-    color: '#bc13fe',
-    badge: 'F1 Stats',
+    color: '#c084fc',
   },
   {
     id: 'paddockdle',
     title: 'PaddockDle F1',
-    category: 'Formula 1',
-    desc: 'Daily F1 mystery driver Wordle with telemetry attribute clues and hints.',
+    group: 'f1',
+    badge: 'Formula 1 · Wordle',
+    desc: 'Daily mystery driver deduction with telemetry attribute clues.',
     path: '/paddockdle',
     icon: Flame,
-    color: '#e10600',
-    badge: 'F1 Wordle',
+    color: '#ef4444',
   },
   {
     id: 'paddockdle-grid',
     title: 'Paddock Grid',
-    category: 'Formula 1',
-    desc: '3×3 F1 Immaculate Grid matrix puzzle with constructors and driver stats.',
+    group: 'f1',
+    badge: 'Formula 1 · Matrix',
+    desc: '3x3 Formula 1 Immaculate Grid matching constructors and records.',
     path: '/paddockdle-grid',
     icon: Grid,
-    color: '#00f3ff',
-    badge: '3×3 Matrix',
+    color: '#38bdf8',
   },
   {
     id: 'paddockdle-career',
     title: 'Paddock Career',
-    category: 'Formula 1',
-    desc: 'Step-by-step career progression and timeline clues to unmask the driver.',
+    group: 'f1',
+    badge: 'Formula 1 · Timeline',
+    desc: 'Chronological seat-by-seat progression clues to identify the driver.',
     path: '/paddockdle-career',
     icon: Trophy,
-    color: '#ffd700',
-    badge: 'Career Clues',
+    color: '#fbbf24',
   },
   {
     id: 'math',
     title: 'Math Blitz',
-    category: 'Speed Math',
-    desc: 'Rapid-fire mental arithmetic quiz challenge designed to test agility.',
+    group: 'strategy',
+    badge: 'Speed Math · Timed',
+    desc: 'Rapid mental arithmetic rounds tuned for quick keyboard entry.',
     path: '/math-game.html',
     external: true,
     icon: FileText,
-    color: '#ff758c',
-    badge: 'Quiz Blitz',
+    color: '#fb7185',
   },
 ];
 
-const Home = () => {
+const SEGMENTS = [
+  { id: 'all', label: 'All Games' },
+  { id: 'arcade', label: 'Arcade' },
+  { id: 'f1', label: 'Formula 1' },
+  { id: 'strategy', label: 'Strategy' },
+];
+
+export default function Home() {
+  const [segment, setSegment] = useState('all');
+
+  const visibleGames = useMemo(() => {
+    if (segment === 'all') return GAMES;
+    return GAMES.filter((g) => g.group === segment);
+  }, [segment]);
+
   return (
-    <div className="glass-panel hub-container">
-      {/* Hero Header */}
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={SPRING_DEFAULT}
+      className="glass-panel hub-container"
+    >
       <header className="hub-hero">
-        <div className="hub-badge">
-          <Sparkles size={14} />
-          <span>Next-Gen Web Arcade Hub</span>
+        <div className="hub-eyebrow tabular-nums">
+          React Nexus · {GAMES.length} Interactive Games · Cloud Leaderboards
         </div>
-
         <h1 className="hub-title">React Nexus</h1>
-
         <p className="hub-tagline">
-          Code &bull; Play &bull; Compete &mdash; An ultra-responsive collection of interactive
-          browser games, featuring smart AI opponents, real-time physics, and global leaderboards.
+          Tactile browser arcade pairing deterministic game logic, direct pointer physics, and cloud score sync across desktop and mobile.
         </p>
-
-        <div className="hub-stats-strip">
-          <span className="hub-stat-item">
-            <Cpu size={14} color="#00f3ff" />
-            <span><strong>9</strong> Games</span>
-          </span>
-          <span>&bull;</span>
-          <span className="hub-stat-item">
-            <Flame size={14} color="#ffd700" />
-            <span>AI Opponents & PvP</span>
-          </span>
-          <span>&bull;</span>
-          <span className="hub-stat-item">
-            <Trophy size={14} color="#bc13fe" />
-            <span>Cloud Leaderboards</span>
-          </span>
-        </div>
       </header>
 
-      {/* 3x3 Responsive Game Grid */}
-      <main className="hub-games-grid">
-        {GAMES.map((game) => {
-          const Icon = game.icon;
-          const cardContent = (
-            <div
-              className="arcade-card"
-              style={{
-                borderColor: `${game.color}35`,
-                boxShadow: `0 8px 30px rgba(0, 0, 0, 0.25)`,
-              }}
-            >
-              {/* Radial glow background */}
-              <div
-                className="arcade-card-glow"
-                style={{ backgroundColor: game.color }}
-              />
+      <div className="hub-toolbar">
+        <div className="segmented-control" role="tablist" aria-label="Game categories">
+          {SEGMENTS.map((seg) => {
+            const active = segment === seg.id;
+            return (
+              <button
+                key={seg.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onPointerDown={() => {
+                  setSegment(seg.id);
+                  emitFeedback('tap');
+                }}
+                className={`segmented-btn ${active ? 'active' : ''}`}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="hubSegment"
+                    transition={SPRING_SHEET}
+                    className="segmented-indicator"
+                  />
+                )}
+                {seg.label}
+              </button>
+            );
+          })}
+        </div>
 
+        <span className="hub-meta-count tabular-nums">
+          {visibleGames.length} of {GAMES.length} titles
+        </span>
+      </div>
+
+      <main className="hub-games-grid">
+        {visibleGames.map((game) => {
+          const Icon = game.icon;
+          const cardBody = (
+            <motion.div
+              layout
+              whileTap={TAP_DETENT}
+              transition={SPRING_DEFAULT}
+              onPointerDown={() => emitFeedback('tap')}
+              className="arcade-card"
+            >
               <div className="arcade-card-top">
                 <div
                   className="arcade-card-icon-box"
-                  style={{
-                    backgroundColor: `${game.color}18`,
-                    border: `1px solid ${game.color}50`,
-                  }}
+                  style={{ borderColor: `${game.color}38` }}
                 >
-                  <Icon size={24} color={game.color} />
+                  <Icon size={20} strokeWidth={1.75} color={game.color} />
                 </div>
-                <span
-                  className="arcade-card-category"
-                  style={{
-                    color: game.color,
-                    border: `1px solid ${game.color}40`,
-                    background: `${game.color}12`,
-                  }}
-                >
-                  {game.badge}
-                </span>
+                <span className="arcade-card-category">{game.badge}</span>
               </div>
 
               <h3 className="arcade-card-title">{game.title}</h3>
               <p className="arcade-card-desc">{game.desc}</p>
-            </div>
+            </motion.div>
           );
 
           if (game.external) {
@@ -228,7 +240,7 @@ const Home = () => {
                 className="arcade-card-link"
                 title={`Launch ${game.title}`}
               >
-                {cardContent}
+                {cardBody}
               </a>
             );
           }
@@ -240,23 +252,16 @@ const Home = () => {
               className="arcade-card-link"
               title={`Play ${game.title}`}
             >
-              {cardContent}
+              {cardBody}
             </Link>
           );
         })}
       </main>
 
-      {/* Hub Footer */}
       <footer className="hub-footer">
-        <div>
-          <span>React Nexus v2.0 &bull; Built with React 19, Vite & Firebase</span>
-        </div>
-        <div className="hub-footer-links">
-          <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Arcade Suite</span>
-        </div>
+        <span>React Nexus · Spring physics & Web Audio SFX</span>
+        <span className="tabular-nums">Press M anytime to mute audio</span>
       </footer>
-    </div>
+    </motion.div>
   );
-};
-
-export default Home;
+}

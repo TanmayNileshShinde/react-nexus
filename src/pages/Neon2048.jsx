@@ -1,45 +1,71 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Trophy, Grid, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import sound from '../utils/audioFX';
-
-// firebase
+import { motion } from 'motion/react';
+import {
+  ArrowLeft,
+  RefreshCw,
+  Trophy,
+  Grid,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  increment,
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+} from 'firebase/firestore';
+import {
+  SPRING_DEFAULT,
+  SPRING_MOMENTUM,
+  TAP_DETENT,
+  emitFeedback,
+  rubberband,
+} from '../utils/fluidMotion';
 
-// --- NEON TILE COLORS ---
 const getTileStyle = (val) => {
   const styles = {
-    0: { bg: 'rgba(255,255,255,0.02)', color: 'transparent', shadow: 'none' },
-    2: { bg: 'rgba(0, 243, 255, 0.1)', color: '#00f3ff', shadow: '0 0 10px rgba(0, 243, 255, 0.3)' },
-    4: { bg: 'rgba(0, 243, 255, 0.2)', color: '#00f3ff', shadow: '0 0 15px rgba(0, 243, 255, 0.5)' },
-    8: { bg: 'rgba(188, 19, 254, 0.2)', color: '#bc13fe', shadow: '0 0 15px rgba(188, 19, 254, 0.5)' },
-    16: { bg: 'rgba(188, 19, 254, 0.4)', color: '#bc13fe', shadow: '0 0 20px rgba(188, 19, 254, 0.7)' },
-    32: { bg: 'rgba(255, 68, 68, 0.2)', color: '#ff4444', shadow: '0 0 15px rgba(255, 68, 68, 0.5)' },
-    64: { bg: 'rgba(255, 68, 68, 0.4)', color: '#ff4444', shadow: '0 0 20px rgba(255, 68, 68, 0.7)' },
-    128: { bg: 'rgba(0, 175, 58, 0.2)', color: '#00af3a', shadow: '0 0 20px rgba(0, 175, 58, 0.5)' },
-    256: { bg: 'rgba(0, 175, 58, 0.4)', color: '#00af3a', shadow: '0 0 25px rgba(0, 175, 58, 0.7)' },
-    512: { bg: 'rgba(255, 215, 0, 0.2)', color: '#ffd700', shadow: '0 0 20px rgba(255, 215, 0, 0.5)' },
-    1024: { bg: 'rgba(255, 215, 0, 0.4)', color: '#ffd700', shadow: '0 0 30px rgba(255, 215, 0, 0.8)' },
-    2048: { bg: 'rgba(255, 255, 255, 0.8)', color: '#000', shadow: '0 0 40px rgba(255, 255, 255, 1)' }
+    0: { bg: 'rgba(255, 255, 255, 0.03)', color: 'transparent', border: 'rgba(255, 255, 255, 0.06)' },
+    2: { bg: 'rgba(56, 189, 248, 0.14)', color: '#7dd3fc', border: 'rgba(56, 189, 248, 0.3)' },
+    4: { bg: 'rgba(56, 189, 248, 0.24)', color: '#e0f2fe', border: 'rgba(56, 189, 248, 0.45)' },
+    8: { bg: 'rgba(167, 139, 250, 0.24)', color: '#ede9fe', border: 'rgba(167, 139, 250, 0.45)' },
+    16: { bg: 'rgba(167, 139, 250, 0.38)', color: '#f5f3ff', border: 'rgba(167, 139, 250, 0.6)' },
+    32: { bg: 'rgba(248, 113, 113, 0.26)', color: '#fee2e2', border: 'rgba(248, 113, 113, 0.5)' },
+    64: { bg: 'rgba(248, 113, 113, 0.42)', color: '#ffffff', border: 'rgba(248, 113, 113, 0.7)' },
+    128: { bg: 'rgba(52, 211, 153, 0.28)', color: '#ecfdf5', border: 'rgba(52, 211, 153, 0.5)' },
+    256: { bg: 'rgba(52, 211, 153, 0.44)', color: '#ffffff', border: 'rgba(52, 211, 153, 0.7)' },
+    512: { bg: 'rgba(251, 191, 36, 0.28)', color: '#fef3c7', border: 'rgba(251, 191, 36, 0.55)' },
+    1024: { bg: 'rgba(251, 191, 36, 0.45)', color: '#ffffff', border: 'rgba(251, 191, 36, 0.75)' },
+    2048: { bg: '#f5f7fa', color: '#0b0d12', border: '#ffffff' },
   };
-  return styles[val] || { bg: 'rgba(255, 255, 255, 0.9)', color: '#000', shadow: '0 0 50px #fff' };
+  return styles[val] || { bg: '#f5f7fa', color: '#0b0d12', border: '#ffffff' };
 };
 
 const getEmptyCoordinates = (currentBoard) => {
-  let emptyCoords = [];
+  const emptyCoords = [];
   for (let r = 0; r < 4; r++) {
-    for (let c = 0; c < 4; c++) { if (currentBoard[r][c] === 0) emptyCoords.push({ r, c }); }
+    for (let c = 0; c < 4; c++) {
+      if (currentBoard[r][c] === 0) emptyCoords.push({ r, c });
+    }
   }
   return emptyCoords;
 };
 
 const spawnRandomTile = (currentBoard) => {
-  let emptyCoords = getEmptyCoordinates(currentBoard);
+  const emptyCoords = getEmptyCoordinates(currentBoard);
   if (emptyCoords.length === 0) return currentBoard;
-  let randomCoord = emptyCoords[Math.floor(Math.random() * emptyCoords.length)];
-  let newBoard = currentBoard.map(row => [...row]);
+  const randomCoord = emptyCoords[Math.floor(Math.random() * emptyCoords.length)];
+  const newBoard = currentBoard.map((row) => [...row]);
   newBoard[randomCoord.r][randomCoord.c] = Math.random() < 0.9 ? 2 : 4;
   return newBoard;
 };
@@ -55,45 +81,64 @@ const checkGameOver = (currentBoard) => {
   return true;
 };
 
-const Neon2048 = () => {
+export default function Neon2048() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('menu'); 
+  const [view, setView] = useState('menu');
   const [stats, setStats] = useState({ neon2048HighScore: 0, neon2048Matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [board, setBoard] = useState(Array(4).fill().map(() => Array(4).fill(0)));
+  const [board, setBoard] = useState(() => Array(4).fill().map(() => Array(4).fill(0)));
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
+
+  // Direct manipulation 1:1 swipe state for the board
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const gestureRef = useRef({ active: false, startX: 0, startY: 0, pointerId: null });
 
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
-      const userRef = doc(db, "users", result.user.uid);
+      const userRef = doc(db, 'users', result.user.uid);
       const docSnap = await getDoc(userRef);
       if (!docSnap.exists()) {
-        const initialData = { displayName: result.user.displayName, photoURL: result.user.photoURL, neon2048HighScore: 0, neon2048Matches: 0 };
+        const initialData = {
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+          neon2048HighScore: 0,
+          neon2048Matches: 0,
+        };
         await setDoc(userRef, initialData);
         setStats(initialData);
       } else {
         const data = docSnap.data();
-        setStats({ neon2048HighScore: data.neon2048HighScore || 0, neon2048Matches: data.neon2048Matches || 0 });
+        setStats({
+          neon2048HighScore: data.neon2048HighScore || 0,
+          neon2048Matches: data.neon2048Matches || 0,
+        });
       }
-    } catch (error) { console.error("Login failed", error); }
+    } catch (error) {
+      console.error('Login failed', error);
+    }
   };
 
   const fetchLeaderboard = async () => {
+    emitFeedback('tap');
     setView('leaderboard');
     setIsLoading(true);
     try {
-      const q = query(collection(db, "users"), orderBy("neon2048HighScore", "desc"), limit(10));
+      const q = query(collection(db, 'users'), orderBy('neon2048HighScore', 'desc'), limit(10));
       const querySnapshot = await getDocs(q);
-      setLeaderboardData(querySnapshot.docs.map(doc => doc.data()));
-    } catch (error) { console.error("Error fetching leaderboard:", error); } 
-    finally { setIsLoading(false); }
+      setLeaderboardData(querySnapshot.docs.map((d) => d.data()));
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetGame = () => {
+    emitFeedback('tap');
     let newBoard = Array(4).fill().map(() => Array(4).fill(0));
     newBoard = spawnRandomTile(newBoard);
     newBoard = spawnRandomTile(newBoard);
@@ -102,215 +147,572 @@ const Neon2048 = () => {
     setIsGameOver(false);
   };
 
-  const handleGameOver = useCallback(async (finalScore) => {
-    setIsGameOver(true);
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    const isNewHighScore = finalScore > stats.neon2048HighScore;
-    setStats(prev => ({ ...prev, neon2048HighScore: isNewHighScore ? finalScore : prev.neon2048HighScore, neon2048Matches: prev.neon2048Matches + 1 }));
-    await updateDoc(userRef, { neon2048Matches: increment(1), ...(isNewHighScore && { neon2048HighScore: finalScore }) });
-  }, [user, stats.neon2048HighScore]);
+  const handleGameOver = useCallback(
+    async (finalScore) => {
+      setIsGameOver(true);
+      emitFeedback('foul');
+      if (!user) return;
+      const userRef = doc(db, 'users', user.uid);
+      const isNewHighScore = finalScore > stats.neon2048HighScore;
+      setStats((prev) => ({
+        ...prev,
+        neon2048HighScore: isNewHighScore ? finalScore : prev.neon2048HighScore,
+        neon2048Matches: prev.neon2048Matches + 1,
+      }));
+      await updateDoc(userRef, {
+        neon2048Matches: increment(1),
+        ...(isNewHighScore && { neon2048HighScore: finalScore }),
+      });
+    },
+    [user, stats.neon2048HighScore]
+  );
 
-  const move = useCallback((direction) => {
-    if (isGameOver || view !== 'game') return;
-    let newBoard = board.map(row => [...row]);
-    let pointsEarned = 0;
-    let changed = false;
+  const move = useCallback(
+    (direction) => {
+      if (isGameOver || view !== 'game') return;
+      let newBoard = board.map((row) => [...row]);
+      let pointsEarned = 0;
+      let changed = false;
 
-    const slide = (row) => {
-      let arr = row.filter(val => val);
-      return arr.concat(Array(4 - arr.length).fill(0));
-    };
+      const slide = (row) => {
+        const arr = row.filter((val) => val);
+        return arr.concat(Array(4 - arr.length).fill(0));
+      };
 
-    const combine = (row) => {
-      for (let i = 0; i < 3; i++) {
-        if (row[i] !== 0 && row[i] === row[i + 1]) {
-          row[i] = row[i] * 2;
-          row[i + 1] = 0;
-          pointsEarned += row[i];
+      const combine = (row) => {
+        for (let i = 0; i < 3; i++) {
+          if (row[i] !== 0 && row[i] === row[i + 1]) {
+            row[i] = row[i] * 2;
+            row[i + 1] = 0;
+            pointsEarned += row[i];
+          }
+        }
+        return row;
+      };
+
+      const operate = (row) => slide(combine(slide(row)));
+
+      if (direction === 'LEFT') {
+        for (let i = 0; i < 4; i++) {
+          const ogRow = [...newBoard[i]];
+          newBoard[i] = operate(newBoard[i]);
+          if (ogRow.join(',') !== newBoard[i].join(',')) changed = true;
+        }
+      } else if (direction === 'RIGHT') {
+        for (let i = 0; i < 4; i++) {
+          const ogRow = [...newBoard[i]];
+          newBoard[i] = operate(newBoard[i].reverse()).reverse();
+          if (ogRow.join(',') !== newBoard[i].join(',')) changed = true;
+        }
+      } else if (direction === 'UP') {
+        for (let c = 0; c < 4; c++) {
+          const ogRow = [newBoard[0][c], newBoard[1][c], newBoard[2][c], newBoard[3][c]];
+          const next = operate([...ogRow]);
+          if (ogRow.join(',') !== next.join(',')) changed = true;
+          for (let r = 0; r < 4; r++) newBoard[r][c] = next[r];
+        }
+      } else if (direction === 'DOWN') {
+        for (let c = 0; c < 4; c++) {
+          const ogRow = [newBoard[0][c], newBoard[1][c], newBoard[2][c], newBoard[3][c]];
+          const next = operate([...ogRow].reverse()).reverse();
+          if (ogRow.join(',') !== next.join(',')) changed = true;
+          for (let r = 0; r < 4; r++) newBoard[r][c] = next[r];
         }
       }
-      return row;
-    };
 
-    const operate = (row) => slide(combine(slide(row)));
-
-    if (direction === 'LEFT') {
-      for (let i = 0; i < 4; i++) {
-        let ogRow = [...newBoard[i]];
-        newBoard[i] = operate(newBoard[i]);
-        if (ogRow.join(',') !== newBoard[i].join(',')) changed = true;
+      if (changed) {
+        emitFeedback(pointsEarned > 0 ? 'merge' : 'move');
+        newBoard = spawnRandomTile(newBoard);
+        setBoard(newBoard);
+        setScore((s) => s + pointsEarned);
+        if (checkGameOver(newBoard)) handleGameOver(score + pointsEarned);
       }
-    } else if (direction === 'RIGHT') {
-      for (let i = 0; i < 4; i++) {
-        let ogRow = [...newBoard[i]];
-        newBoard[i] = operate(newBoard[i].reverse()).reverse();
-        if (ogRow.join(',') !== newBoard[i].join(',')) changed = true;
-      }
-    } else if (direction === 'UP') {
-      for (let c = 0; c < 4; c++) {
-        let row = [newBoard[0][c], newBoard[1][c], newBoard[2][c], newBoard[3][c]];
-        let ogRow = [...row];
-        row = operate(row);
-        if (ogRow.join(',') !== row.join(',')) changed = true;
-        for (let r = 0; r < 4; r++) newBoard[r][c] = row[r];
-      }
-    } else if (direction === 'DOWN') {
-      for (let c = 0; c < 4; c++) {
-        let row = [newBoard[0][c], newBoard[1][c], newBoard[2][c], newBoard[3][c]];
-        let ogRow = [...row];
-        row = operate(row.reverse()).reverse();
-        if (ogRow.join(',') !== row.join(',')) changed = true;
-        for (let r = 0; r < 4; r++) newBoard[r][c] = row[r];
-      }
-    }
-
-    if (changed) {
-      if (pointsEarned > 0) sound.playMerge(); else sound.playMove();
-      newBoard = spawnRandomTile(newBoard);
-      setBoard(newBoard);
-      setScore(s => s + pointsEarned);
-      if (checkGameOver(newBoard)) handleGameOver(score + pointsEarned);
-    }
-  }, [board, isGameOver, view, score, handleGameOver]);
+    },
+    [board, isGameOver, view, score, handleGameOver]
+  );
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(e.key)) e.preventDefault();
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+        e.preventDefault();
+      }
       switch (e.key) {
-        case 'ArrowUp': case 'w': move('UP'); break;
-        case 'ArrowDown': case 's': move('DOWN'); break;
-        case 'ArrowLeft': case 'a': move('LEFT'); break;
-        case 'ArrowRight': case 'd': move('RIGHT'); break;
-        default: break;
+        case 'ArrowUp':
+        case 'w':
+          move('UP');
+          break;
+        case 'ArrowDown':
+        case 's':
+          move('DOWN');
+          break;
+        case 'ArrowLeft':
+        case 'a':
+          move('LEFT');
+          break;
+        case 'ArrowRight':
+        case 'd':
+          move('RIGHT');
+          break;
+        default:
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [move]);
 
-  const MenuCard = ({ icon: Icon, title, subtitle, onClick, color }) => (
-    <div onClick={onClick} className="glass-panel" style={{ 
-      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', padding: '30px', 
-      border: `1px solid ${color}`, background: `linear-gradient(145deg, rgba(255,255,255,0.03) 0%, ${color}10 100%)`,
-      transition: 'all 0.3s ease', marginBottom: '20px'
-    }}>
-      <div style={{ background: `${color}20`, padding: '20px', borderRadius: '12px' }}><Icon size={40} color={color}/></div>
-      <div style={{ textAlign: 'left' }}>
-        <h3 style={{ margin: '0 0 5px 0', fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>{title}</h3>
-        <p style={{ margin: 0, fontSize: '1rem', opacity: 0.6, color: 'white' }}>{subtitle}</p>
-      </div>
-    </div>
-  );
+  // 1:1 Pointer Events board drag with Apple rubberband edge resistance
+  const handleBoardPointerDown = (e) => {
+    if (isGameOver) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    gestureRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      pointerId: e.pointerId,
+    };
+  };
+
+  const handleBoardPointerMove = (e) => {
+    if (!gestureRef.current.active || gestureRef.current.pointerId !== e.pointerId) return;
+    const dx = e.clientX - gestureRef.current.startX;
+    const dy = e.clientY - gestureRef.current.startY;
+    // Direct axis-locked rubber-banding after 10px hysteresis threshold
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      setDragOffset({ x: rubberband(dx, 140, 0.35), y: 0 });
+    } else {
+      setDragOffset({ x: 0, y: rubberband(dy, 140, 0.35) });
+    }
+  };
+
+  const finishBoardGesture = (e) => {
+    if (!gestureRef.current.active || gestureRef.current.pointerId !== e.pointerId) return;
+    const dx = e.clientX - gestureRef.current.startX;
+    const dy = e.clientY - gestureRef.current.startY;
+    gestureRef.current.active = false;
+    setDragOffset({ x: 0, y: 0 });
+
+    const threshold = 28;
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      move(dx > 0 ? 'RIGHT' : 'LEFT');
+    } else {
+      move(dy > 0 ? 'DOWN' : 'UP');
+    }
+  };
 
   return (
-    <div className="glass-panel" style={{ 
-      width: '100%', maxWidth: '800px', minHeight: '800px', 
-      padding: '40px', margin: '40px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
-    }}>
-      
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '3rem', fontWeight: '800', margin: 0, background: 'linear-gradient(to right, #00f3ff, #bc13fe)', WebkitBackgroundClip: 'text', color: 'transparent', textTransform: 'uppercase', letterSpacing: '4px' }}>Neon 2048</h2>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={SPRING_DEFAULT}
+      className="glass-panel"
+      style={{
+        width: '100%',
+        maxWidth: '580px',
+        padding: '24px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+        <h2
+          style={{
+            fontSize: '1.85rem',
+            fontWeight: 600,
+            letterSpacing: '-0.025em',
+            lineHeight: 1.08,
+            margin: 0,
+            color: '#f5f7fa',
+          }}
+        >
+          Neon 2048
+        </h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.84rem', color: 'rgba(245,247,250,0.6)' }}>
+          Swipe directly on the grid or use arrow keys
+        </p>
       </div>
 
       {view === 'menu' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '500px', margin: '0 auto', width: '100%' }}>
-          <MenuCard icon={Grid} title="Start Protocol" subtitle="Classic 2048 Rules" color="#00f3ff" onClick={() => { setView('game'); resetGame(); }} />
-          <MenuCard icon={Trophy} title="Hall of Fame" subtitle="Top High Scores" color="#bc13fe" onClick={fetchLeaderboard} />
-          <Link to="/" style={{ textAlign: 'center', marginTop: '40px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <ArrowLeft size={16}/> Back to Nexus
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            maxWidth: '420px',
+            margin: '12px auto',
+            width: '100%',
+          }}
+        >
+          <motion.button
+            type="button"
+            whileTap={TAP_DETENT}
+            transition={SPRING_DEFAULT}
+            onPointerDown={() => {
+              setView('game');
+              resetGame();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '18px 20px',
+              borderRadius: '14px',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              background: 'rgba(56, 189, 248, 0.12)',
+              color: '#f5f7fa',
+              textAlign: 'left',
+            }}
+          >
+            <Grid size={22} strokeWidth={1.75} color="#38bdf8" />
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 600 }}>Start Game</div>
+              <div style={{ fontSize: '0.82rem', color: 'rgba(245,247,250,0.68)' }}>
+                Classic 4x4 merge rules with swipe momentum
+              </div>
+            </div>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            whileTap={TAP_DETENT}
+            transition={SPRING_DEFAULT}
+            onPointerDown={fetchLeaderboard}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '18px 20px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#f5f7fa',
+              textAlign: 'left',
+            }}
+          >
+            <Trophy size={22} strokeWidth={1.75} color="#fbbf24" />
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 600 }}>Leaderboard</div>
+              <div style={{ fontSize: '0.82rem', color: 'rgba(245,247,250,0.68)' }}>
+                Top recorded scores synced to Firestore
+              </div>
+            </div>
+          </motion.button>
+
+          <Link
+            to="/"
+            style={{
+              textAlign: 'center',
+              marginTop: '14px',
+              color: 'rgba(245,247,250,0.58)',
+              fontSize: '0.88rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+          >
+            <ArrowLeft size={15} strokeWidth={1.75} /> Back to Library
           </Link>
         </div>
       )}
 
       {view === 'game' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          
-          <div style={{ width: '100%', maxWidth: '500px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#00f3ff', textShadow: '0 0 15px rgba(0, 243, 255, 0.5)' }}>SCORE: {score}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(245,247,250,0.5)' }}>Score</div>
+              <div
+                className="tabular-nums"
+                style={{ fontSize: '1.75rem', fontWeight: 600, color: '#38bdf8', lineHeight: 1.1 }}
+              >
+                {score}
+              </div>
+            </div>
+
             {!user ? (
-              <button onClick={handleLogin} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '10px 20px', borderRadius: '25px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}>Login to Save</button>
+              <button
+                type="button"
+                onPointerDown={handleLogin}
+                style={{
+                  background: '#f5f7fa',
+                  color: '#0b0d12',
+                  border: 'none',
+                  height: '34px',
+                  padding: '0 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                }}
+              >
+                Sign in to Save
+              </button>
             ) : (
-              <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'right' }}>
                 <div>
-                  <div style={{ fontSize: '1rem', color: 'white', fontWeight: 'bold' }}>{user.displayName}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#bc13fe' }}>Best: {stats.neon2048HighScore}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#f5f7fa' }}>
+                    {user.displayName}
+                  </div>
+                  <div className="tabular-nums" style={{ fontSize: '0.75rem', color: '#38bdf8' }}>
+                    Best {stats.neon2048HighScore}
+                  </div>
                 </div>
-                <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 45, height: 45, borderRadius: '50%', border: '3px solid #00f3ff' }} />
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  referrerPolicy="no-referrer"
+                  style={{ width: 34, height: 34, borderRadius: '50%' }}
+                />
               </div>
             )}
           </div>
 
-          <div style={{ 
-            width: '100%', maxWidth: '500px', aspectRatio: '1/1', background: 'rgba(0,0,0,0.5)', 
-            border: `2px solid ${isGameOver ? '#ff4444' : '#00f3ff'}`, borderRadius: '12px', 
-            padding: '15px', position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '10px',
-            boxShadow: `0 0 30px ${isGameOver ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 243, 255, 0.2)'}`
-          }}>
-            {board.map((row, r) => row.map((cell, c) => {
-              const style = getTileStyle(cell);
-              return (
-                <div key={`${r}-${c}`} style={{ background: style.bg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cell > 512 ? '2rem' : '2.5rem', fontWeight: '900', color: style.color, boxShadow: style.shadow, border: cell > 0 ? `1px solid ${style.color}55` : '1px solid rgba(255,255,255,0.05)', transition: 'all 0.15s ease-in-out' }}>
-                  {cell > 0 ? cell : ''}
-                </div>
-              );
-            }))}
+          {/* 4x4 Direct-Manipulation Board */}
+          <motion.div
+            onPointerDown={handleBoardPointerDown}
+            onPointerMove={handleBoardPointerMove}
+            onPointerUp={finishBoardGesture}
+            onPointerCancel={finishBoardGesture}
+            animate={{ x: dragOffset.x, y: dragOffset.y }}
+            transition={SPRING_MOMENTUM}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              aspectRatio: '1/1',
+              background: 'rgba(10, 12, 18, 0.78)',
+              border: `1px solid ${isGameOver ? 'rgba(248, 113, 113, 0.55)' : 'rgba(255, 255, 255, 0.14)'}`,
+              borderRadius: '16px',
+              padding: '12px',
+              position: 'relative',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateRows: 'repeat(4, 1fr)',
+              gap: '10px',
+              touchAction: 'none',
+              userSelect: 'none',
+              cursor: 'grab',
+            }}
+          >
+            {board.map((row, r) =>
+              row.map((cell, c) => {
+                const tileStyle = getTileStyle(cell);
+                return (
+                  <motion.div
+                    key={`${r}-${c}-${cell}`}
+                    initial={cell > 0 ? { scale: 0.86 } : false}
+                    animate={{ scale: 1 }}
+                    transition={SPRING_MOMENTUM}
+                    className="tabular-nums"
+                    style={{
+                      background: tileStyle.bg,
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: cell >= 1024 ? '1.35rem' : cell >= 128 ? '1.65rem' : '1.9rem',
+                      fontWeight: 600,
+                      color: tileStyle.color,
+                      border: `1px solid ${tileStyle.border}`,
+                    }}
+                  >
+                    {cell > 0 ? cell : ''}
+                  </motion.div>
+                );
+              })
+            )}
+
             {isGameOver && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '12px' }}>
-                <h2 style={{ color: '#ff4444', margin: '0 0 15px 0', fontSize: '3.5rem', textShadow: '0 0 30px rgba(255, 68, 68, 0.6)' }}>GRID LOCKED</h2>
-                <p style={{ color: 'white', fontSize: '1.5rem', margin: 0 }}>Final Score: <span style={{color: '#00f3ff', fontWeight: 'bold'}}>{score}</span></p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={SPRING_DEFAULT}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(11, 13, 18, 0.86)',
+                  backdropFilter: 'blur(12px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10,
+                  borderRadius: '15px',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ color: '#f87171', fontSize: '1.5rem', fontWeight: 600 }}>
+                  No Moves Left
+                </div>
+                <div className="tabular-nums" style={{ color: '#f5f7fa', fontSize: '1.1rem' }}>
+                  Final score: {score}
+                </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
 
-          {/* COMPACT D-PAD CONTROLS */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px' }}>
-             <button onClick={() => move('UP')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronUp size={24}/></button>
-             <div style={{ display: 'flex', gap: '40px', margin: '5px 0' }}>
-                <button onClick={() => move('LEFT')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronLeft size={24}/></button>
-                <button onClick={() => move('RIGHT')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronRight size={24}/></button>
-             </div>
-             <button onClick={() => move('DOWN')} style={{ width: '80px', height: '40px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,243,255,0.3)', borderRadius: '8px', cursor: 'pointer', color: '#00f3ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><ChevronDown size={24}/></button>
-          </div>
+          {/* Compact Directional Controls + Actions all within viewport */}
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[
+                { dir: 'LEFT', Icon: ChevronLeft },
+                { dir: 'UP', Icon: ChevronUp },
+                { dir: 'DOWN', Icon: ChevronDown },
+                { dir: 'RIGHT', Icon: ChevronRight },
+              ].map((ctrl) => (
+                <button
+                  key={ctrl.dir}
+                  type="button"
+                  aria-label={`Move ${ctrl.dir}`}
+                  onPointerDown={() => move(ctrl.dir)}
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    color: '#f5f7fa',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <ctrl.Icon size={18} strokeWidth={1.75} />
+                </button>
+              ))}
+            </div>
 
-          <div style={{ display: 'flex', gap: '20px', marginTop: '20px', width: '100%', maxWidth: '500px' }}>
-            <button onClick={() => { setView('menu'); setIsGameOver(false); }} style={{ flex: 1, padding: '15px', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-              <ArrowLeft size={24}/> MENU
-            </button>
-            <button onClick={resetGame} style={{ flex: 1, padding: '15px', background: 'rgba(0, 243, 255, 0.1)', border: '2px solid #00f3ff', color: '#00f3ff', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-              <RefreshCw size={24}/> RESTART
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onPointerDown={() => {
+                  emitFeedback('tap');
+                  setView('menu');
+                  setIsGameOver(false);
+                }}
+                style={{
+                  height: '38px',
+                  padding: '0 14px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  color: '#f5f7fa',
+                  fontSize: '0.84rem',
+                  fontWeight: 500,
+                }}
+              >
+                Menu
+              </button>
+              <button
+                type="button"
+                onPointerDown={resetGame}
+                style={{
+                  height: '38px',
+                  padding: '0 14px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#f5f7fa',
+                  color: '#0b0d12',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <RefreshCw size={14} strokeWidth={1.75} />
+                Restart
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {view === 'leaderboard' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
-             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}><ArrowLeft size={32}/></button>
-            <h3 style={{ margin: 0, fontSize: '2rem', color: '#bc13fe' }}>Hall of Fame</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onPointerDown={() => {
+                emitFeedback('tap');
+                setView('menu');
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#f5f7fa',
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ArrowLeft size={16} strokeWidth={1.75} />
+            </button>
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: '#f5f7fa' }}>
+              Top 2048 Scores
+            </h3>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '10px' }}>
-            {isLoading ? ( <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '50px', color: 'white', fontSize: '1.2rem' }}>Fetching Grid Data...</div> ) : (
+
+          <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {isLoading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(245,247,250,0.55)' }}>
+                Loading leaderboard
+              </div>
+            ) : (
               leaderboardData.map((player, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', marginBottom: '15px', borderRadius: '16px', background: index === 0 ? 'linear-gradient(90deg, rgba(188,19,254,0.2) 0%, rgba(255,255,255,0.05) 100%)' : 'rgba(255,255,255,0.05)', border: index === 0 ? '2px solid rgba(188,19,254,0.5)' : '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: index === 0 ? '#bc13fe' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white', fontSize: '1.2rem' }}>{index + 1}</div>
-                    <img src={player.photoURL} alt="Player" referrerPolicy="no-referrer" style={{ width: 50, height: 50, borderRadius: '50%' }} />
-                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'white' }}>{player.displayName || "Unknown"}</div>
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    background: index === 0 ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span className="tabular-nums" style={{ fontWeight: 600, color: index === 0 ? '#38bdf8' : 'rgba(245,247,250,0.55)' }}>
+                      #{index + 1}
+                    </span>
+                    {player.photoURL && (
+                      <img src={player.photoURL} alt={player.displayName} referrerPolicy="no-referrer" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+                    )}
+                    <span style={{ fontWeight: 500, color: '#f5f7fa' }}>
+                      {player.displayName || 'Player'}
+                    </span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#00f3ff', fontWeight: 'bold', fontSize: '1.8rem' }}>{player.neon2048HighScore || 0}</div>
-                    <div style={{ fontSize: '0.9rem', opacity: 0.5, color: 'white' }}>High Score</div>
-                  </div>
+                  <span className="tabular-nums" style={{ fontWeight: 600, color: '#38bdf8' }}>
+                    {player.neon2048HighScore || 0}
+                  </span>
                 </div>
               ))
             )}
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
-};
-
-export default Neon2048;
+}
