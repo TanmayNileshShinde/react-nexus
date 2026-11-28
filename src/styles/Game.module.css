@@ -26,12 +26,12 @@
 }
 
 .square {
-  width: 88px;
-  height: 88px;
+  width: clamp(64px, 22vw, 88px);
+  height: clamp(64px, 22vw, 88px);
   background: rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 2.6rem;
+  font-size: clamp(1.9rem, 7vw, 2.6rem);
   font-weight: 700;
   display: flex;
   justify-content: center;

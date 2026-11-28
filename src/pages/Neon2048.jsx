@@ -11,8 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import {
   doc,
   setDoc,
@@ -25,6 +24,7 @@ import {
   limit,
   getDocs,
 } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 import {
   SPRING_DEFAULT,
   SPRING_MOMENTUM,
@@ -82,7 +82,7 @@ const checkGameOver = (currentBoard) => {
 };
 
 export default function Neon2048() {
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('menu');
   const [stats, setStats] = useState({ neon2048HighScore: 0, neon2048Matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -93,30 +93,57 @@ export default function Neon2048() {
 
   // Direct manipulation 1:1 swipe state for the board
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const gestureRef = useRef({ active: false, startX: 0, startY: 0, pointerId: null });
+  const boardRef = useRef(board);
+  const scoreRef = useRef(score);
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setStats({ neon2048HighScore: 0, neon2048Matches: 0 });
+        return;
+      }
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          const initialData = {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            neon2048HighScore: 0,
+            neon2048Matches: 0,
+          };
+          await setDoc(userRef, initialData, { merge: true });
+          if (!cancelled) setStats({ neon2048HighScore: 0, neon2048Matches: 0 });
+        } else {
+          const data = docSnap.data();
+          setStats({
+            neon2048HighScore: data.neon2048HighScore || 0,
+            neon2048Matches: data.neon2048Matches || 0,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to sync 2048 stats', error);
+      }
+    };
+    syncUser();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      const userRef = doc(db, 'users', result.user.uid);
-      const docSnap = await getDoc(userRef);
-      if (!docSnap.exists()) {
-        const initialData = {
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          neon2048HighScore: 0,
-          neon2048Matches: 0,
-        };
-        await setDoc(userRef, initialData);
-        setStats(initialData);
-      } else {
-        const data = docSnap.data();
-        setStats({
-          neon2048HighScore: data.neon2048HighScore || 0,
-          neon2048Matches: data.neon2048Matches || 0,
-        });
-      }
+      await loginWithGoogle();
     } catch (error) {
       console.error('Login failed', error);
     }
@@ -142,6 +169,8 @@ export default function Neon2048() {
     let newBoard = Array(4).fill().map(() => Array(4).fill(0));
     newBoard = spawnRandomTile(newBoard);
     newBoard = spawnRandomTile(newBoard);
+    boardRef.current = newBoard;
+    scoreRef.current = 0;
     setBoard(newBoard);
     setScore(0);
     setIsGameOver(false);
@@ -174,7 +203,7 @@ export default function Neon2048() {
   const move = useCallback(
     (direction) => {
       if (isGameOver || view !== 'game') return;
-      let newBoard = board.map((row) => [...row]);
+      let newBoard = boardRef.current.map((row) => [...row]);
       let pointsEarned = 0;
       let changed = false;
 
@@ -227,12 +256,15 @@ export default function Neon2048() {
       if (changed) {
         emitFeedback(pointsEarned > 0 ? 'merge' : 'move');
         newBoard = spawnRandomTile(newBoard);
+        boardRef.current = newBoard;
+        const nextScore = scoreRef.current + pointsEarned;
+        scoreRef.current = nextScore;
         setBoard(newBoard);
-        setScore((s) => s + pointsEarned);
-        if (checkGameOver(newBoard)) handleGameOver(score + pointsEarned);
+        setScore(nextScore);
+        if (checkGameOver(newBoard)) handleGameOver(nextScore);
       }
     },
-    [board, isGameOver, view, score, handleGameOver]
+    [isGameOver, view, handleGameOver]
   );
 
   useEffect(() => {
@@ -271,6 +303,7 @@ export default function Neon2048() {
   const handleBoardPointerDown = (e) => {
     if (isGameOver) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    setIsDragging(true);
     gestureRef.current = {
       active: true,
       startX: e.clientX,
@@ -297,6 +330,7 @@ export default function Neon2048() {
     const dx = e.clientX - gestureRef.current.startX;
     const dy = e.clientY - gestureRef.current.startY;
     gestureRef.current.active = false;
+    setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
 
     const threshold = 28;
@@ -490,7 +524,7 @@ export default function Neon2048() {
             onPointerUp={finishBoardGesture}
             onPointerCancel={finishBoardGesture}
             animate={{ x: dragOffset.x, y: dragOffset.y }}
-            transition={SPRING_MOMENTUM}
+            transition={isDragging ? { duration: 0 } : SPRING_MOMENTUM}
             style={{
               width: '100%',
               maxWidth: '400px',
@@ -575,6 +609,7 @@ export default function Neon2048() {
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '12px',
+              flexWrap: 'wrap',
             }}
           >
             <div style={{ display: 'flex', gap: '6px' }}>

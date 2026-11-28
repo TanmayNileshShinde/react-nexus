@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, SlidersHorizontal } from 'lucide-react';
 import { useSound } from '../context/SoundContext';
 import { SPRING_SHEET, emitFeedback } from '../utils/fluidMotion';
 
@@ -47,6 +47,20 @@ export default function AudioController() {
         )}
         <span>{isMuted ? 'Muted' : 'Sound'}</span>
         <kbd className="audio-key-hint">M</kbd>
+      </button>
+
+      <button
+        type="button"
+        className="arcade-audio-btn"
+        style={{ padding: '0 8px', marginLeft: '4px' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowSlider((s) => !s);
+        }}
+        title="Adjust Sound Volume"
+        aria-label="Adjust Sound Volume"
+      >
+        <SlidersHorizontal size={13} strokeWidth={1.75} />
       </button>
 
       <AnimatePresence>

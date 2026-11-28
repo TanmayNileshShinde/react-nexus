@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { MotionConfig } from 'motion/react';
 import { Gamepad2, ArrowLeft } from 'lucide-react';
 import Home from './pages/Home';
@@ -15,6 +15,7 @@ import F1PaddockGrid from './pages/F1PaddockGrid';
 import F1PaddockCareer from './pages/F1PaddockCareer';
 import Neon2048 from './pages/Neon2048';
 import { SoundProvider } from './context/SoundContext';
+import { AuthProvider } from './context/AuthContext';
 import AudioController from './components/AudioController';
 import { emitFeedback } from './utils/fluidMotion';
 
@@ -76,27 +77,29 @@ function TopChromeBar() {
 function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <SoundProvider>
-        <Router>
-          <TopChromeBar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/game" element={<TicTacToe />} />
-            <Route path="/memory" element={<MemoryGame />} />
-            <Route path="/reaction" element={<ReactionGame />} />
-            <Route path="/chess" element={<ChessGame />} />
-            <Route path="/snake" element={<SnakeGame />} />
-            <Route path="/f1" element={<F1HigherLower />} />
-            <Route path="/paddockdle" element={<F1PaddockClassic />} />
-            <Route path="/f1-wordle" element={<F1PaddockClassic />} />
-            <Route path="/paddockdle-grid" element={<F1PaddockGrid />} />
-            <Route path="/paddockdle-career" element={<F1PaddockCareer />} />
-            <Route path="/type" element={<TypingMaster />} />
-            <Route path="/2048" element={<Neon2048 />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </Router>
-      </SoundProvider>
+      <AuthProvider>
+        <SoundProvider>
+          <Router>
+            <TopChromeBar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/game" element={<TicTacToe />} />
+              <Route path="/memory" element={<MemoryGame />} />
+              <Route path="/reaction" element={<ReactionGame />} />
+              <Route path="/chess" element={<ChessGame />} />
+              <Route path="/snake" element={<SnakeGame />} />
+              <Route path="/f1" element={<F1HigherLower />} />
+              <Route path="/paddockdle" element={<F1PaddockClassic />} />
+              <Route path="/f1-wordle" element={<F1PaddockClassic />} />
+              <Route path="/paddockdle-grid" element={<F1PaddockGrid />} />
+              <Route path="/paddockdle-career" element={<F1PaddockCareer />} />
+              <Route path="/type" element={<TypingMaster />} />
+              <Route path="/2048" element={<Neon2048 />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </SoundProvider>
+      </AuthProvider>
     </MotionConfig>
   );
 }

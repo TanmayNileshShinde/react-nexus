@@ -7,13 +7,13 @@ import { getBestChessMove } from '../utils/chessAI';
 import styles from '../styles/Game.module.css';
 
 // firebase
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 const ChessGame = () => {
   // state
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('menu'); 
   const [game, setGame] = useState(new Chess());
   const [difficulty] = useState(2); 
@@ -40,30 +40,44 @@ const ChessGame = () => {
   };
 
   // --- 2. AUTH & DATA SYNC ---
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setStats({ chessWins: 0, chessLosses: 0, chessMatches: 0 });
+        return;
+      }
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          const initialData = {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            chessWins: 0, chessLosses: 0, chessMatches: 0
+          };
+          await setDoc(userRef, initialData, { merge: true });
+          if (!cancelled) setStats({ chessWins: 0, chessLosses: 0, chessMatches: 0 });
+        } else {
+          const data = docSnap.data();
+          setStats({
+            chessWins: data.chessWins || 0,
+            chessLosses: data.chessLosses || 0,
+            chessMatches: data.chessMatches || 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to sync chess stats", error);
+      }
+    };
+    syncUser();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      
-      const userRef = doc(db, "users", result.user.uid);
-      const docSnap = await getDoc(userRef);
-
-      if (!docSnap.exists()) {
-        const initialData = { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          chessWins: 0, chessLosses: 0, chessMatches: 0 
-        };
-        await setDoc(userRef, initialData);
-        setStats(initialData);
-      } else {
-        const data = docSnap.data();
-        setStats({
-          chessWins: data.chessWins || 0,
-          chessLosses: data.chessLosses || 0,
-          chessMatches: data.chessMatches || 0,
-        });
-      }
+      await loginWithGoogle();
     } catch (error) {
       console.error("Login failed", error);
     }
@@ -217,6 +231,37 @@ const ChessGame = () => {
                 <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #ffd700' }} />
               </div>
             )}
+          </div>
+
+          <div style={{
+            width: '100%',
+            padding: '10px 14px',
+            marginBottom: '12px',
+            borderRadius: '10px',
+            background: game.isGameOver()
+              ? 'rgba(255, 215, 0, 0.14)'
+              : game.inCheck()
+              ? 'rgba(248, 113, 113, 0.16)'
+              : 'rgba(255, 255, 255, 0.05)',
+            border: game.isGameOver()
+              ? '1px solid rgba(255, 215, 0, 0.45)'
+              : game.inCheck()
+              ? '1px solid rgba(248, 113, 113, 0.45)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            fontSize: '0.9rem',
+            fontWeight: 700,
+            textAlign: 'center',
+            color: game.isGameOver() ? '#ffd700' : game.inCheck() ? '#f87171' : '#f5f7fa',
+          }}>
+            {game.isCheckmate()
+              ? `Checkmate — ${game.turn() === 'w' ? 'Black' : 'White'} wins`
+              : game.isStalemate()
+              ? 'Draw — Stalemate'
+              : game.isDraw()
+              ? 'Draw — Insufficient Material or Repetition'
+              : game.inCheck()
+              ? `${game.turn() === 'w' ? 'White' : 'Black'} is in Check`
+              : `${game.turn() === 'w' ? 'White' : 'Black'} to move`}
           </div>
 
           <div style={{ width: '100%', marginBottom: '30px', boxShadow: '0 0 50px rgba(255, 215, 0, 0.1)' }}>

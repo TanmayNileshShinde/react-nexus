@@ -6,21 +6,24 @@
     <title>AngularJS Module</title>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
     <style>
+        * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', sans-serif;
             background-color: #0f172a; /* Matches your React Theme */
             color: white;
             display: flex;
             justify-content: center;
-            padding: 50px;
+            padding: clamp(16px, 4vw, 50px);
+            margin: 0;
         }
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 2rem;
-            width: 500px;
+            padding: clamp(1.25rem, 4vw, 2rem);
+            width: 100%;
+            max-width: 500px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
         input {

@@ -20,8 +20,8 @@ export const SoundProvider = ({ children }) => {
     });
 
     const handleKeyDown = (e) => {
-      // input check
-      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable) {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) {
         return;
       }
       if (e.key === 'm' || e.key === 'M') {

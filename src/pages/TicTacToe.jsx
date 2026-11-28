@@ -6,9 +6,9 @@ import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 
 // firebase
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 const calculateWinner = (squares) => {
   const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -69,7 +69,7 @@ const getBestMove = (currentBoard) => {
 
 const TicTacToe = () => {
   // state
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('menu'); // 'menu', 'game_ai', 'game_friend', 'leaderboard'
   const [board, setBoard] = useState(Array(9).fill(null));
   const [isXNext, setIsXNext] = useState(true);
@@ -83,39 +83,55 @@ const TicTacToe = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // auth
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setStats({ wins: 0, losses: 0, matches: 0, winRate: 0 });
+        return;
+      }
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          const initialData = {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            wins: 0, losses: 0, matches: 0, winRate: 0
+          };
+          await setDoc(userRef, initialData, { merge: true });
+          if (!cancelled) setStats({ wins: 0, losses: 0, matches: 0, winRate: 0 });
+        } else {
+          const data = docSnap.data();
+          const losses = data.losses ?? 0;
+          if (data.losses === undefined) {
+            await setDoc(userRef, {
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              losses: 0
+            }, { merge: true });
+          }
+          if (!cancelled) {
+            setStats({
+              wins: data.wins || 0,
+              losses,
+              matches: data.matches || 0,
+              winRate: data.winRate || 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to sync TicTacToe stats", error);
+      }
+    };
+    syncUser();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      
-      const userRef = doc(db, "users", result.user.uid);
-      const docSnap = await getDoc(userRef);
-
-      if (!docSnap.exists()) {
-        const initialData = { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          wins: 0, losses: 0, matches: 0, winRate: 0 
-        };
-        await setDoc(userRef, initialData);
-        setStats(initialData);
-      } else {
-        const data = docSnap.data();
-        if (data.losses === undefined) data.losses = 0;
-        
-        await setDoc(userRef, { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          losses: data.losses 
-        }, { merge: true });
-        
-        setStats({
-          wins: data.wins || 0,
-          losses: data.losses || 0,
-          matches: data.matches || 0,
-          winRate: data.winRate || 0,
-        });
-      }
+      await loginWithGoogle();
     } catch (error) {
       console.error("Login failed", error);
     }
@@ -177,28 +193,35 @@ const TicTacToe = () => {
   }, [isXNext, view, winner, isDraw, board, difficulty]);
 
   const hasRecordedResultRef = useRef(false);
+  const statsRef = useRef(stats);
+  statsRef.current = stats;
 
   const updateStats = useCallback(async (isWin, isDrawGame) => {
     if (isWin) sound.playVictory(); else if (isDrawGame) sound.playClick(); else sound.playGameOver();
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
 
-    setStats((prev) => {
-      const newWins = isWin ? (prev.wins || 0) + 1 : (prev.wins || 0);
-      const newLosses = (!isWin && !isDrawGame) ? (prev.losses || 0) + 1 : (prev.losses || 0);
-      const newMatches = (prev.matches || 0) + 1;
-      const totalDecisiveGames = newWins + newLosses;
-      const newRate = totalDecisiveGames === 0 ? 0 : ((newWins / totalDecisiveGames) * 100).toFixed(1);
+    const prev = statsRef.current;
+    const newWins = isWin ? (prev.wins || 0) + 1 : (prev.wins || 0);
+    const newLosses = (!isWin && !isDrawGame) ? (prev.losses || 0) + 1 : (prev.losses || 0);
+    const newMatches = (prev.matches || 0) + 1;
+    const totalDecisiveGames = newWins + newLosses;
+    const newRate = totalDecisiveGames === 0 ? 0 : Number(((newWins / totalDecisiveGames) * 100).toFixed(1));
 
-      updateDoc(userRef, {
+    const nextStats = { wins: newWins, losses: newLosses, matches: newMatches, winRate: newRate };
+    statsRef.current = nextStats;
+    setStats(nextStats);
+
+    try {
+      await updateDoc(userRef, {
         matches: increment(1),
         wins: isWin ? increment(1) : increment(0),
         losses: (!isWin && !isDrawGame) ? increment(1) : increment(0),
         winRate: newRate
-      }).catch((error) => console.error('Failed to update TicTacToe stats', error));
-
-      return { wins: newWins, losses: newLosses, matches: newMatches, winRate: newRate };
-    });
+      });
+    } catch (error) {
+      console.error('Failed to update TicTacToe stats', error);
+    }
   }, [user]);
 
   // --- 5. STATS SAVING ---
@@ -212,7 +235,7 @@ const TicTacToe = () => {
 
     if (view === 'game_ai') {
       updateStats(winner === 'X', isDraw);
-    } else if (view === 'game_pvp') {
+    } else if (view === 'game_friend') {
       if (winner) sound.playVictory();
       else if (isDraw) sound.playClick();
     }

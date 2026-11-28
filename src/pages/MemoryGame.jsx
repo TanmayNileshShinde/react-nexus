@@ -6,8 +6,7 @@ import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 import { SPRING_DEFAULT, SPRING_MOMENTUM, emitFeedback } from '../utils/fluidMotion';
 
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import {
   doc,
   setDoc,
@@ -20,6 +19,7 @@ import {
   limit,
   getDocs,
 } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 const MAX_MOVES = 30;
 
@@ -49,7 +49,7 @@ const ALL_DRIVERS = [
 ];
 
 export default function MemoryGame() {
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('game');
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
@@ -91,34 +91,46 @@ export default function MemoryGame() {
     shuffleCards();
   }, [shuffleCards]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setStats({ f1_wins: 0, f1_matches: 0 });
+        return;
+      }
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          await setDoc(
+            userRef,
+            {
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              f1_wins: 0,
+              f1_matches: 0,
+            },
+            { merge: true }
+          );
+          if (!cancelled) setStats({ f1_wins: 0, f1_matches: 0 });
+        } else {
+          const data = docSnap.data();
+          setStats({ f1_wins: data.f1_wins || 0, f1_matches: data.f1_matches || 0 });
+        }
+      } catch (error) {
+        console.error('Failed to sync Memory stats', error);
+      }
+    };
+    syncUser();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      const userRef = doc(db, 'users', result.user.uid);
-      const docSnap = await getDoc(userRef);
-
-      if (!docSnap.exists()) {
-        await setDoc(
-          userRef,
-          {
-            displayName: result.user.displayName,
-            photoURL: result.user.photoURL,
-            f1_wins: 0,
-            f1_matches: 0,
-          },
-          { merge: true }
-        );
-        setStats({ f1_wins: 0, f1_matches: 0 });
-      } else {
-        const data = docSnap.data();
-        await setDoc(
-          userRef,
-          { displayName: result.user.displayName, photoURL: result.user.photoURL },
-          { merge: true }
-        );
-        setStats({ f1_wins: data.f1_wins || 0, f1_matches: data.f1_matches || 0 });
-      }
+      await loginWithGoogle();
     } catch (error) {
       console.error('Login failed', error);
     }
@@ -298,7 +310,7 @@ export default function MemoryGame() {
             )}
           </div>
 
-          {gameState === 'lost' && (
+          {(gameState === 'lost' || gameState === 'won') && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -316,13 +328,17 @@ export default function MemoryGame() {
                 gap: '12px',
               }}
             >
-              <AlertTriangle size={40} strokeWidth={1.5} color="#f87171" />
+              {gameState === 'won' ? (
+                <Trophy size={40} strokeWidth={1.5} color="#34d399" />
+              ) : (
+                <AlertTriangle size={40} strokeWidth={1.5} color="#f87171" />
+              )}
               <h3 style={{ color: '#f5f7fa', fontSize: '1.35rem', fontWeight: 600, margin: 0 }}>
-                Out of Moves
+                {gameState === 'won' ? 'All Pairs Matched!' : 'Out of Moves'}
               </h3>
               <button
                 type="button"
-                onPointerDown={() => {
+                onClick={() => {
                   emitFeedback('tap');
                   shuffleCards();
                 }}
@@ -338,7 +354,7 @@ export default function MemoryGame() {
                   fontWeight: 600,
                 }}
               >
-                Try Again
+                {gameState === 'won' ? 'Play Again' : 'Try Again'}
               </button>
             </motion.div>
           )}
@@ -378,6 +394,8 @@ export default function MemoryGame() {
                       position: 'absolute',
                       inset: 0,
                       backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
+                      transform: 'rotateY(0deg)',
                       background: 'rgba(255, 255, 255, 0.06)',
                       border: '1px solid rgba(255, 255, 255, 0.12)',
                       boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12)',
@@ -395,6 +413,7 @@ export default function MemoryGame() {
                       position: 'absolute',
                       inset: 0,
                       backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
                       background: card.color,
                       transform: 'rotateY(180deg)',
                       borderRadius: '12px',
@@ -433,7 +452,7 @@ export default function MemoryGame() {
             })}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
             <Link to="/" style={{ flex: 1 }}>
               <button className={styles.button} style={{ width: '100%' }}>
                 <ArrowLeft size={16} strokeWidth={1.75} /> Library
@@ -486,7 +505,11 @@ export default function MemoryGame() {
           </div>
 
           <div style={{ maxHeight: '360px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {leaderboardData.map((player, index) => (
+            {leaderboardData.length === 0 ? (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(245,247,250,0.55)', fontSize: '0.9rem' }}>
+                No leaderboard entries yet.
+              </div>
+            ) : leaderboardData.map((player, index) => (
               <div
                 key={index}
                 style={{

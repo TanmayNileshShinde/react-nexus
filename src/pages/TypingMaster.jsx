@@ -4,9 +4,9 @@ import { ArrowLeft, RefreshCw, Trophy, Terminal } from 'lucide-react';
 
 
 // firebase
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 const codeSnippets = [
   // --- REACT & JSX ---
@@ -38,7 +38,7 @@ const codeSnippets = [
 
 const TypingMaster = () => {
   // state
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('menu'); 
   const [stats, setStats] = useState({ typingWPM: 0, typingMatches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -64,29 +64,43 @@ const TypingMaster = () => {
   }, []);
 
   // --- 1. AUTH & DATA SYNC ---
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setStats({ typingWPM: 0, typingMatches: 0 });
+        return;
+      }
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          const initialData = {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            typingWPM: 0, typingMatches: 0
+          };
+          await setDoc(userRef, initialData, { merge: true });
+          if (!cancelled) setStats({ typingWPM: 0, typingMatches: 0 });
+        } else {
+          const data = docSnap.data();
+          setStats({
+            typingWPM: data.typingWPM || 0,
+            typingMatches: data.typingMatches || 0
+          });
+        }
+      } catch (error) {
+        console.error("Failed to sync Typing stats", error);
+      }
+    };
+    syncUser();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      
-      const userRef = doc(db, "users", result.user.uid);
-      const docSnap = await getDoc(userRef);
-
-      if (!docSnap.exists()) {
-        const initialData = { 
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          typingWPM: 0, typingMatches: 0 
-        };
-        await setDoc(userRef, initialData);
-        setStats(initialData);
-      } else {
-        const data = docSnap.data();
-        setStats({
-          typingWPM: data.typingWPM || 0,
-          typingMatches: data.typingMatches || 0
-        });
-      }
+      await loginWithGoogle();
     } catch (error) { console.error("Login failed", error); }
   };
 
@@ -134,12 +148,19 @@ const TypingMaster = () => {
 
     setUserInput(val);
 
-    // Calculate live accuracy
+    // Calculate live accuracy and live WPM
     let correctChars = 0;
     for (let i = 0; i < val.length; i++) {
       if (val[i] === snippet[i]) correctChars++;
     }
     setAccuracy(val.length === 0 ? 100 : Math.round((correctChars / val.length) * 100));
+
+    if (val.length === 0) {
+      setWpm(0);
+    } else if (startTimeRef.current) {
+      const liveMinutes = Math.max(1 / 120, (Date.now() - startTimeRef.current) / 60000);
+      setWpm(Math.round((val.length / 5) / liveMinutes));
+    }
 
     // Finish only when exact snippet matches completely
     if (val === snippet) {
@@ -200,16 +221,16 @@ const TypingMaster = () => {
 
   return (
     <div className="glass-panel" style={{ 
-      width: '100%', maxWidth: '800px', minHeight: '800px', 
-      padding: '40px', margin: '40px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
+      width: '100%', maxWidth: '800px', minHeight: 'min(760px, calc(100vh - 110px))', 
+      padding: 'clamp(16px, 4vw, 40px)', margin: '20px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
     }}>
       
       {/* HEADER */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '28px' }}>
         <h2 style={{ 
-          fontSize: '3rem', fontWeight: '800', margin: 0, 
+          fontSize: 'clamp(1.75rem, 6vw, 3rem)', fontWeight: '800', margin: 0, 
           background: 'linear-gradient(to right, #00ff88, #00b8ff)', WebkitBackgroundClip: 'text', color: 'transparent',
-          textTransform: 'uppercase', letterSpacing: '4px'
+          textTransform: 'uppercase', letterSpacing: '3px'
         }}>
           Terminal Typer
         </h2>
@@ -255,12 +276,14 @@ const TypingMaster = () => {
           </div>
 
           {/* THE TERMINAL BOARD */}
-          <div style={{ 
-            width: '100%', maxWidth: '700px', background: '#0d1117', 
-            border: `2px solid ${isFinished ? '#00ff88' : 'rgba(0, 255, 136, 0.3)'}`, borderRadius: '12px', 
-            padding: '40px', position: 'relative', boxShadow: '0 0 40px rgba(0, 255, 136, 0.1)',
-            minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start'
-          }}>
+          <div
+            onClick={() => inputRef.current?.focus()}
+            style={{ 
+              width: '100%', maxWidth: '700px', background: '#0d1117', 
+              border: `2px solid ${isFinished ? '#00ff88' : 'rgba(0, 255, 136, 0.3)'}`, borderRadius: '12px', 
+              padding: 'clamp(16px, 4vw, 40px)', position: 'relative', boxShadow: '0 0 40px rgba(0, 255, 136, 0.1)',
+              minHeight: '280px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'text', boxSizing: 'border-box'
+            }}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                <div style={{width: 12, height: 12, borderRadius: '50%', background: '#ff5f56'}}></div>
                <div style={{width: 12, height: 12, borderRadius: '50%', background: '#ffbd2e'}}></div>
@@ -268,7 +291,7 @@ const TypingMaster = () => {
             </div>
 
             {/* Displaying the text character by character */}
-            <div style={{ fontSize: '1.6rem', fontFamily: 'monospace', lineHeight: '1.6', color: '#8b949e', whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%' }} onClick={() => inputRef.current?.focus()}>
+            <div style={{ fontSize: 'clamp(0.95rem, 3.2vw, 1.5rem)', fontFamily: 'monospace', lineHeight: '1.6', color: '#8b949e', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textAlign: 'left', width: '100%' }}>
               {snippet.split('').map((char, idx) => {
                 let color = '#8b949e'; // default gray
                 let background = 'transparent';
@@ -287,7 +310,7 @@ const TypingMaster = () => {
                     background,
                     borderBottom: isCursor ? '3px solid #00ff88' : 'none',
                   }}>
-                    {char}
+                    {isCursor && char === '\n' ? '↵\n' : char}
                   </span>
                 );
               })}
@@ -298,7 +321,16 @@ const TypingMaster = () => {
               ref={inputRef}
               value={userInput}
               onChange={handleTyping}
+              onKeyDown={(e) => {
+                if (e.key === 'Tab') {
+                  e.preventDefault();
+                }
+              }}
               disabled={isFinished}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               style={{ position: 'absolute', opacity: 0, top: 0, left: 0, height: '10px', width: '10px', pointerEvents: 'none' }}
               autoFocus
             />

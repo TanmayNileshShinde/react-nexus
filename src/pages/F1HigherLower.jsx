@@ -4,9 +4,9 @@ import { ArrowLeft, RefreshCw, Trophy, ChevronUp, ChevronDown, Flag } from 'luci
 import sound from '../utils/audioFX';
 
 // firebase
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 // driver data
 const f1Data = [
@@ -43,7 +43,7 @@ const getRandomDriver = (excludeDriver) => {
 };
 
 const F1HigherLower = () => {
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('menu'); 
   const [stats, setStats] = useState({ f1HighScore: 0, f1Matches: 0 });
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -63,21 +63,36 @@ const F1HigherLower = () => {
     }
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setStats({ f1HighScore: 0, f1Matches: 0 });
+        return;
+      }
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          const initialData = { displayName: user.displayName, photoURL: user.photoURL, f1HighScore: 0, f1Matches: 0 };
+          await setDoc(userRef, initialData, { merge: true });
+          if (!cancelled) setStats({ f1HighScore: 0, f1Matches: 0 });
+        } else {
+          const data = docSnap.data();
+          setStats({ f1HighScore: data.f1HighScore || 0, f1Matches: data.f1Matches || 0 });
+        }
+      } catch (error) {
+        console.error("Failed to sync F1 stats", error);
+      }
+    };
+    syncUser();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      const userRef = doc(db, "users", result.user.uid);
-      const docSnap = await getDoc(userRef);
-
-      if (!docSnap.exists()) {
-        const initialData = { displayName: result.user.displayName, photoURL: result.user.photoURL, f1HighScore: 0, f1Matches: 0 };
-        await setDoc(userRef, initialData);
-        setStats(initialData);
-      } else {
-        const data = docSnap.data();
-        setStats({ f1HighScore: data.f1HighScore || 0, f1Matches: data.f1Matches || 0 });
-      }
+      await loginWithGoogle();
     } catch (error) { console.error("Login failed", error); }
   };
 
@@ -169,14 +184,14 @@ const F1HigherLower = () => {
 
   return (
     <div className="glass-panel" style={{ 
-      width: '100%', maxWidth: '800px', minHeight: '800px', 
-      padding: '40px', margin: '40px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
+      width: '100%', maxWidth: '800px', minHeight: 'min(800px, 85vh)', 
+      padding: 'clamp(16px, 4vw, 40px)', margin: '24px auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box'
     }}>
       
       {/* HEADER */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'clamp(20px, 4vw, 40px)' }}>
         <h2 style={{ 
-          fontSize: '3rem', fontWeight: '800', margin: 0, 
+          fontSize: 'clamp(1.75rem, 5vw, 3rem)', fontWeight: '800', margin: 0, 
           background: 'linear-gradient(to right, #ff1801, #ff6a00)', WebkitBackgroundClip: 'text', color: 'transparent',
           textTransform: 'uppercase', letterSpacing: '4px'
         }}>
@@ -218,14 +233,14 @@ const F1HigherLower = () => {
           </div>
 
           {/* BULLETPROOF DRIVER CARDS ARENA */}
-          <div style={{ 
+          <div className="f1-duel-row" style={{ 
             display: 'flex', width: '100%', maxWidth: '750px', gap: '20px', 
-            height: '450px', alignItems: 'center', boxSizing: 'border-box'
+            minHeight: '450px', alignItems: 'stretch', boxSizing: 'border-box'
           }}>
             
             {/* LEFT CARD: Current Driver */}
-            <div className="glass-panel" style={{ 
-              flex: 1, width: '50%', height: '450px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+            <div className="glass-panel f1-duel-card" style={{ 
+              flex: 1, minHeight: '360px', display: 'flex', flexDirection: 'column', alignItems: 'center',
               background: `linear-gradient(to bottom, ${currentDriver.color}11, rgba(0,0,0,0.6))`, 
               border: `2px solid ${currentDriver.color}`, boxShadow: `0 0 30px ${currentDriver.color}33`,
               padding: '20px', boxSizing: 'border-box'
@@ -265,8 +280,8 @@ const F1HigherLower = () => {
             </div>
 
             {/* RIGHT CARD: Next Driver Guessing */}
-            <div className="glass-panel" style={{ 
-              flex: 1, width: '50%', height: '450px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+            <div className="glass-panel f1-duel-card" style={{ 
+              flex: 1, minHeight: '360px', display: 'flex', flexDirection: 'column', alignItems: 'center',
               background: `linear-gradient(to bottom, ${nextDriver.color}11, rgba(0,0,0,0.6))`, 
               border: `2px solid ${isGameOver ? '#ff1801' : nextDriver.color}`, boxShadow: `0 0 30px ${nextDriver.color}33`,
               padding: '20px', boxSizing: 'border-box'

@@ -52,6 +52,14 @@ class SoundEngine {
   }
 
   toggleMute() {
+    if (this.muted && this.volume <= 0) {
+      this.volume = 0.35;
+      try {
+        localStorage.setItem('react-nexus-volume', '0.35');
+      } catch {
+        // ignore
+      }
+    }
     this.setMuted(!this.muted);
     return this.muted;
   }
@@ -64,8 +72,13 @@ class SoundEngine {
     } catch {
       // ignore
     }
+    if (this.volume === 0) {
+      this.setMuted(true);
+      return;
+    }
     if (this.volume > 0 && this.muted) {
       this.setMuted(false);
+      return;
     }
     this.notify();
   }

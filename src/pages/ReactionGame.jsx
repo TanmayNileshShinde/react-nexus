@@ -6,8 +6,7 @@ import styles from '../styles/Game.module.css';
 import sound from '../utils/audioFX';
 import { SPRING_DEFAULT, SPRING_MOMENTUM, emitFeedback } from '../utils/fluidMotion';
 
-import { auth, googleProvider, db } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { db } from '../firebase';
 import {
   doc,
   setDoc,
@@ -19,7 +18,9 @@ import {
   orderBy,
   limit,
   getDocs,
+  where,
 } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 function Light({ active }) {
   return (
@@ -27,8 +28,8 @@ function Light({ active }) {
       animate={{ scale: active ? 1.06 : 1 }}
       transition={SPRING_DEFAULT}
       style={{
-        width: '54px',
-        height: '54px',
+        width: 'clamp(36px, 11vw, 54px)',
+        height: 'clamp(36px, 11vw, 54px)',
         borderRadius: '50%',
         backgroundColor: active ? '#ef4444' : 'rgba(255, 255, 255, 0.06)',
         boxShadow: active
@@ -41,7 +42,7 @@ function Light({ active }) {
 }
 
 export default function ReactionGame() {
-  const [user, setUser] = useState(null);
+  const { user, loginWithGoogle } = useAuth();
   const [view, setView] = useState('game');
   const [bestTime, setBestTime] = useState(null);
   const [gameState, setGameState] = useState('idle');
@@ -63,21 +64,40 @@ export default function ReactionGame() {
 
   useEffect(() => () => clearAllTimers(), []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const syncUser = async () => {
+      if (!user) {
+        setBestTime(null);
+        return;
+      }
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+        if (cancelled) return;
+        if (!docSnap.exists()) {
+          await setDoc(
+            userRef,
+            { displayName: user.displayName, photoURL: user.photoURL, total_xp: 0 },
+            { merge: true }
+          );
+          if (!cancelled) setBestTime(null);
+        } else {
+          setBestTime(docSnap.data().best_reaction ?? null);
+        }
+      } catch (error) {
+        console.error('Failed to sync reaction stats', error);
+      }
+    };
+    syncUser();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      const userRef = doc(db, 'users', result.user.uid);
-      const docSnap = await getDoc(userRef);
-      if (!docSnap.exists()) {
-        await setDoc(
-          userRef,
-          { displayName: result.user.displayName, photoURL: result.user.photoURL, best_reaction: null, total_xp: 0 },
-          { merge: true }
-        );
-      } else {
-        setBestTime(docSnap.data().best_reaction);
-      }
+      await loginWithGoogle();
     } catch (error) {
       console.error('Login failed', error);
     }
@@ -146,9 +166,14 @@ export default function ReactionGame() {
       setGameState('idle');
       setView('leaderboard');
       try {
-        const q = query(collection(db, 'users'), orderBy('best_reaction', 'asc'), limit(10));
+        const q = query(
+          collection(db, 'users'),
+          where('best_reaction', '>', 0),
+          orderBy('best_reaction', 'asc'),
+          limit(10)
+        );
         const snap = await getDocs(q);
-        setLeaderboard(snap.docs.map((d) => d.data()).filter((u) => u.best_reaction !== null));
+        setLeaderboard(snap.docs.map((d) => d.data()).filter((u) => Number.isFinite(u.best_reaction)));
       } catch (error) {
         console.error('Error fetching reaction leaderboard', error);
       }
