@@ -88,6 +88,17 @@ const F1PaddockClassic = () => {
   }, [mode]);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (isDropdownOpen) setIsDropdownOpen(false);
+      else if (showHelp) setShowHelp(false);
+      else if (showStats) setShowStats(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDropdownOpen, showHelp, showStats]);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
@@ -117,14 +128,18 @@ const F1PaddockClassic = () => {
   const saveDailyState = (currentGuesses, won, over) => {
     if (mode === 'daily') {
       const todayKey = `nexus_f1_classic_daily_${getLocalDateKey()}`;
-      localStorage.setItem(
-        todayKey,
-        JSON.stringify({
-          guesses: currentGuesses,
-          isWon: won,
-          isGameOver: over,
-        })
-      );
+      try {
+        localStorage.setItem(
+          todayKey,
+          JSON.stringify({
+            guesses: currentGuesses,
+            isWon: won,
+            isGameOver: over,
+          })
+        );
+      } catch {
+        // ignore storage quota errors
+      }
     }
   };
 
@@ -244,6 +259,7 @@ const F1PaddockClassic = () => {
           <button
             type="button"
             onClick={() => {
+              if (mode === 'daily') return;
               sound?.playMove?.();
               setMode('daily');
               setSecretDriver(getDailyDriver());

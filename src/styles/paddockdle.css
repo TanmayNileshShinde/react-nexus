@@ -325,7 +325,7 @@
 
 .paddock-board-headers {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -347,7 +347,7 @@
 
 .paddock-board-row {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -486,7 +486,7 @@
 
 .paddock-grid-matrix {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -560,6 +560,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 12px 16px;
   border-radius: 12px;
   background: #19191c;
@@ -663,13 +665,40 @@
 /* ---------------- RESPONSIVE ---------------- */
 @media (max-width: 640px) {
   .paddock-topbar-inner {
-    padding: 0 12px;
+    padding: 0 10px;
+    gap: 6px;
   }
-  .paddock-mode-link span {
+  .paddock-topbar-left,
+  .paddock-topbar-right {
+    gap: 6px;
+  }
+  .paddock-mode-link {
+    padding: 5px 7px;
+  }
+  .paddock-mode-link span,
+  .paddock-topbar .arcade-audio-btn span,
+  .paddock-topbar .audio-key-hint {
     display: none;
   }
+  .paddock-topbar .arcade-audio-btn {
+    padding: 0 8px;
+    gap: 0;
+  }
   .paddock-wordmark {
-    font-size: 1.05rem;
+    font-size: 1rem;
+  }
+  .paddock-grid-matrix {
+    aspect-ratio: auto;
+    gap: 6px;
+  }
+  .paddock-grid-header,
+  .paddock-grid-cell {
+    min-height: 74px;
+    padding: 6px 4px;
+  }
+  .paddock-grid-header .header-label {
+    font-size: 0.68rem;
+    word-break: break-word;
   }
   .paddock-board-headers,
   .paddock-board-row {

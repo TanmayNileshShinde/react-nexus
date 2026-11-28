@@ -288,7 +288,7 @@ export const F1_DRIVERS = [
       { team: 'AlphaTauri', years: '2021 - 2023' },
       { team: 'RB', years: '2024 - Present' },
     ],
-    teams: ['AlphaTauri', 'RB', 'Toro Rosso'],
+    teams: ['AlphaTauri', 'RB'],
     achievements: ['Points Scorer', 'Fastest Lap'],
   },
   {
@@ -813,7 +813,17 @@ export function getLocalDateKey(date = new Date()) {
 function normalizeTeamName(team) {
   if (!team) return '';
   const stripped = team.replace(/^Retired\s*\/\s*/i, '').trim();
-  if (stripped === 'Red Bull') return 'Red Bull Racing';
+  const lower = stripped.toLowerCase();
+  if (lower === 'red bull' || lower === 'red bull racing') return 'Red Bull Racing';
+  if (lower === 'toro rosso' || lower === 'alphatauri' || lower === 'rb' || lower === 'vcarb') {
+    return 'Racing Bulls';
+  }
+  if (lower === 'sauber' || lower === 'alfa romeo' || lower === 'kick sauber' || lower === 'alfa romeo / sauber') {
+    return 'Sauber';
+  }
+  if (lower === 'renault' || lower === 'alpine' || lower === 'lotus') {
+    return 'Alpine / Renault';
+  }
   return stripped;
 }
 
@@ -1149,7 +1159,7 @@ export function generateCareerClues(driver) {
       step: 2,
       title: 'Career Trajectory / Teams',
       value: driver.careerPath.map((c) => `${c.team} (${c.years})`).join(' ➔ '),
-      hint: `${driver.teams.length} distinct teams in Formula 1`,
+      hint: `${driver.careerPath.length} distinct F1 stints`,
       icon: 'GitFork',
     },
     {

@@ -182,15 +182,19 @@ const F1PaddockGrid = () => {
 
       if (mode === 'daily') {
         const todayKey = `nexus_f1_grid_daily_${getLocalDateKey()}`;
-        localStorage.setItem(
-          todayKey,
-          JSON.stringify({
-            solvedCells: updatedCells,
-            guessesLeft: newGuessesLeft,
-            usedDriverIds: Array.from(updatedUsedIds),
-            isGameOver: gameFinished,
-          })
-        );
+        try {
+          localStorage.setItem(
+            todayKey,
+            JSON.stringify({
+              solvedCells: updatedCells,
+              guessesLeft: newGuessesLeft,
+              usedDriverIds: Array.from(updatedUsedIds),
+              isGameOver: gameFinished,
+            })
+          );
+        } catch {
+          // ignore storage quota errors
+        }
       }
 
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
@@ -215,15 +219,19 @@ const F1PaddockGrid = () => {
 
       if (mode === 'daily') {
         const todayKey = `nexus_f1_grid_daily_${getLocalDateKey()}`;
-        localStorage.setItem(
-          todayKey,
-          JSON.stringify({
-            solvedCells,
-            guessesLeft: newGuessesLeft,
-            usedDriverIds: Array.from(usedDriverIds),
-            isGameOver: newGuessesLeft <= 0,
-          })
-        );
+        try {
+          localStorage.setItem(
+            todayKey,
+            JSON.stringify({
+              solvedCells,
+              guessesLeft: newGuessesLeft,
+              usedDriverIds: Array.from(usedDriverIds),
+              isGameOver: newGuessesLeft <= 0,
+            })
+          );
+        } catch {
+          // ignore storage quota errors
+        }
       }
 
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
@@ -646,9 +654,10 @@ const F1PaddockGrid = () => {
             </div>
 
             <button
+              type="button"
               onClick={() => setShowStats(false)}
               className="paddock-pill-btn"
-              style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '10px', background: '#27272a', color: '#f4f4f5' }}
             >
               Close Telemetry
             </button>

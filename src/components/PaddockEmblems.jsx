@@ -270,6 +270,26 @@ function ConstructorMark({ team, accent, secondary }) {
           <path d="M5 4V18M19 4V18M5 11H19" stroke={secondary} strokeWidth="2.6" strokeLinecap="round" />
         </svg>
       );
+    case 'RB':
+      return (
+        <svg width="22" height="18" viewBox="0 0 28 22" aria-hidden="true">
+          <rect x="3" y="4" width="22" height="14" rx="4" fill="none" stroke={accent} strokeWidth="1.8" />
+          <path d="M8 15V7H12.5C14.2 7 14.2 11 12.5 11H8M12 11L15 15M17 7V15H20.5" stroke={secondary} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Kick Sauber':
+      return (
+        <svg width="20" height="18" viewBox="0 0 24 22" aria-hidden="true">
+          <path d="M6 4V18M17 4L9 11L17 18" stroke={accent} strokeWidth="2.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Alfa Romeo':
+      return (
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke={accent} strokeWidth="1.8" />
+          <path d="M12 4V20M5 12H19" stroke={secondary} strokeWidth="1.8" />
+        </svg>
+      );
     default:
       return (
         <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">

@@ -81,6 +81,17 @@ const F1PaddockCareer = () => {
 
   const dropdownRef = useRef(null);
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (isDropdownOpen) setIsDropdownOpen(false);
+      else if (showHelp) setShowHelp(false);
+      else if (showStats) setShowStats(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDropdownOpen, showHelp, showStats]);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
@@ -123,15 +134,19 @@ const F1PaddockCareer = () => {
 
       if (mode === 'daily') {
         const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
-        localStorage.setItem(
-          todayKey,
-          JSON.stringify({
-            currentStep,
-            guesses: newGuesses,
-            isWon: true,
-            isGameOver: true,
-          })
-        );
+        try {
+          localStorage.setItem(
+            todayKey,
+            JSON.stringify({
+              currentStep,
+              guesses: newGuesses,
+              isWon: true,
+              isGameOver: true,
+            })
+          );
+        } catch {
+          // ignore storage errors
+        }
       }
     } else {
       sound?.playGameOver?.();
@@ -141,15 +156,19 @@ const F1PaddockCareer = () => {
 
         if (mode === 'daily') {
           const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
-          localStorage.setItem(
-            todayKey,
-            JSON.stringify({
-              currentStep,
-              guesses: newGuesses,
-              isWon: false,
-              isGameOver: true,
-            })
-          );
+          try {
+            localStorage.setItem(
+              todayKey,
+              JSON.stringify({
+                currentStep,
+                guesses: newGuesses,
+                isWon: false,
+                isGameOver: true,
+              })
+            );
+          } catch {
+            // ignore storage errors
+          }
         }
       } else {
         const nextStep = Math.min(MAX_STEPS, currentStep + 1);
@@ -157,15 +176,19 @@ const F1PaddockCareer = () => {
 
         if (mode === 'daily') {
           const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
-          localStorage.setItem(
-            todayKey,
-            JSON.stringify({
-              currentStep: nextStep,
-              guesses: newGuesses,
-              isWon: false,
-              isGameOver: false,
-            })
-          );
+          try {
+            localStorage.setItem(
+              todayKey,
+              JSON.stringify({
+                currentStep: nextStep,
+                guesses: newGuesses,
+                isWon: false,
+                isGameOver: false,
+              })
+            );
+          } catch {
+            // ignore storage errors
+          }
         }
       }
     }
@@ -179,15 +202,19 @@ const F1PaddockCareer = () => {
 
     if (mode === 'daily') {
       const todayKey = `nexus_f1_career_daily_${getLocalDateKey()}`;
-      localStorage.setItem(
-        todayKey,
-        JSON.stringify({
-          currentStep: nextStep,
-          guesses,
-          isWon: false,
-          isGameOver: false,
-        })
-      );
+      try {
+        localStorage.setItem(
+          todayKey,
+          JSON.stringify({
+            currentStep: nextStep,
+            guesses,
+            isWon: false,
+            isGameOver: false,
+          })
+        );
+      } catch {
+        // ignore storage errors
+      }
     }
   };
 
@@ -500,11 +527,11 @@ const F1PaddockCareer = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>{g.driver.flag}</span>
+                  <FlagIcon country={g.driver.nationality} size={18} />
                   <span>{g.driver.name}</span>
                   <span style={{ fontSize: '0.7rem', opacity: 0.6, fontFamily: 'monospace' }}>(Clue {g.step})</span>
                 </div>
-                <span>{g.isCorrect ? '✅ Solved' : '❌ Miss'}</span>
+                <span>{g.isCorrect ? 'Solved' : 'Miss'}</span>
               </div>
             ))}
           </div>
@@ -585,9 +612,10 @@ const F1PaddockCareer = () => {
             </div>
 
             <button
+              type="button"
               onClick={() => setShowStats(false)}
               className="paddock-pill-btn"
-              style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '10px', background: '#27272a', color: '#f4f4f5' }}
             >
               Close Stats
             </button>
